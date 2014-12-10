@@ -67,8 +67,9 @@ function Register:ctor()
 	    		end
 	    	}):addTo(self)
 	    	input:setPlaceHolder(lables[i])
-	    	input:setPlaceholderFontSize(40)
+	    	-- input:setPlaceholderFontSize(40)
 	    	input:setPlaceholderFontColor(cc.c3b(96,96,96))
+	    	input:setMaxLength(6)
 
         	cc.ui.UIPushButton.new("#common/green-btn.png",{scale9 = true})
         		:setButtonSize(226, 77)
@@ -130,11 +131,14 @@ function Register:ctor()
 	    		end
 	    	}):addTo(self)
 	    	input:setPlaceHolder("请输入"..lables[i])
-	    	input:setPlaceholderFontSize(40)
+	    	-- input:setPlaceholderFontSize(40)
 	    	input:setPlaceholderFontColor(cc.c3b(96,96,96))
+	    	input:setMaxLength(20)
 	    	self.parts[items[i]] = input
 	    	if i == 3 then
 	    		input:setInputFlag(0)
+	    	elseif i == 1 then
+	    		input:setMaxLength(11)
 	    	end
 	    end
     	
@@ -205,10 +209,10 @@ end
 
 function Register:hide( ... )
 	if display.getRunningScene().parts["acc"] then
-		display.getRunningScene().parts["acc"]:setVisible(true)
+		display.getRunningScene().parts["acc"]:setEnabled(true)
 	end
 	if display.getRunningScene().parts["pwd"] then
-		display.getRunningScene().parts["pwd"]:setVisible(true)
+		display.getRunningScene().parts["pwd"]:setEnabled(true)
 	end
 	self:removeSelf()
 	_.ForgetPwd = nil

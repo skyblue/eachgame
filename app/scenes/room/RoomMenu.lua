@@ -73,8 +73,8 @@ function RoomMenu:ctor()
     local input = display.newSprite("#room/input.png",270,60)
     :addTo(self)
 
-    self.parts["input"] = cc.ui.UILabel.new({
-                text = "聊天内容聊天内容聊", 
+    self.parts["chatMsg"] = cc.ui.UILabel.new({
+                text = "", 
                 size = 42, 
                 x = 90,
                 y = 54,
@@ -95,9 +95,13 @@ function RoomMenu:ctor()
                 end)
                 :onButtonClicked(function(event)
                     if not _.Chat then
+                         dump(1)
                         _.Chat = Chat.new()
+                        self:addChild(_.Chat)
+                    else
+                        _.Chat:show()
+                        dump(2)
                     end
-                    self:addChild(_.Chat)
                 end)
                 :addTo(input)
    cc.ui.UIPushButton.new("#room/xialaxiang-paixing.png")

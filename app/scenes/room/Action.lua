@@ -110,7 +110,7 @@ function Action:raise()
         elseif event.name=='ended' then
             if raise_val > 0 then
                 --发送socket消息
-                SendCMD:chipinAction(raise_val,actionCode)
+                SendCMD:chipinAction(raise_val,CON__USER_RAISE)
                 --发送完消息重置下ui
                 self:hideRaise()
                 self.parts["chipin"]:setPositionY(_start_line)

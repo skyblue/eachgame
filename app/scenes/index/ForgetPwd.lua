@@ -71,7 +71,7 @@ function ForgetPwd:ctor()
     		-- input:setInputFlag(0)
 
 
-			if i == 4 then
+		if i == 4 then
         	size = cc.size(246,95)
         	input = cc.ui.UIInput.new({
 	    		image = "#login/input.png",
@@ -80,27 +80,28 @@ function ForgetPwd:ctor()
 	    		size = size,
 	    		listener = function ( event, editbox )
 	    			-- body
-	    		end
-	    	}):addTo(self)
+	    		end})
+                :addTo(self)
             input:setPlaceHolder(lables[i])
-    	cc.ui.UIPushButton.new("#common/green-btn.png",{scale9 = true})
-    		:setButtonSize(226, 77)
-    		:setButtonLabel(cc.ui.UILabel.new({text = "发送验证码", size = 36, font = "Helvetica"}))
-            :align(display.CENTER,xx + 700,yy)
-            :onButtonPressed(function(event)
-                    -- sprite:runAction(cc.TintBy:create(0,-128,-128,-128))
-            end)
-            :onButtonRelease(function(event)
-                    -- sprite:runAction(cc.TintBy:create(0,255,255,255))
-            end)
-            :onButtonClicked(function (event)
-            		local params = {user_name = string.trim(self.parts["acc"]:getText()),send_type = 1}
-            		params.sign = utils.genSig(params)
-                   utils.http(CONFIG.EachGame_URL .. "user/sendverifycode",params,function ( data )
-                       dump(data)
-                   end)
-            end)
-            :addTo(self)
+            input:setMaxLength(6)
+        	cc.ui.UIPushButton.new("#common/green-btn.png",{scale9 = true})
+        		:setButtonSize(226, 77)
+        		:setButtonLabel(cc.ui.UILabel.new({text = "发送验证码", size = 36, font = "Helvetica"}))
+                :align(display.CENTER,xx + 700,yy)
+                :onButtonPressed(function(event)
+                        -- sprite:runAction(cc.TintBy:create(0,-128,-128,-128))
+                end)
+                :onButtonRelease(function(event)
+                        -- sprite:runAction(cc.TintBy:create(0,255,255,255))
+                end)
+                :onButtonClicked(function (event)
+                		local params = {user_name = string.trim(self.parts["acc"]:getText()),send_type = 1}
+                		params.sign = utils.genSig(params)
+                       utils.http(CONFIG.EachGame_URL .. "user/sendverifycode",params,function ( data )
+                           dump(data)
+                       end)
+                end)
+                :addTo(self)
         else
         	input = cc.ui.UIInput.new({
 	    		image = "#login/input.png",
@@ -109,9 +110,10 @@ function ForgetPwd:ctor()
 	    		size = size,
 	    		listener = function ( event, editbox )
 	    			-- body
-	    		end
-	    	}):addTo(self)
+	    		end})
+                :addTo(self)
 	    	input:setPlaceHolder("请输入"..lables[i])
+            input:setMaxLength(20)
             if i ~= 1 then
     		  input:setInputFlag(0)
             end

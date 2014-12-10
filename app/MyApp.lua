@@ -38,7 +38,7 @@ function MyApp:run()
 
     _.ParseSocket = ParseSocket.new()
     
-self:enterScene("Room")
+self:enterScene("SelectRoom")
 -- 
 -- self:enterScene("Hall")
 
@@ -47,6 +47,7 @@ self:enterScene("Room")
         _.Hall = Hall.new()
         display.replaceScene(_.Hall)
         -- self:enterScene("Hall")
+        SocketEvent:removeEventListenersByEvent(CMD.RSP_GAME_SERVER .. "back")
     end)
 
     

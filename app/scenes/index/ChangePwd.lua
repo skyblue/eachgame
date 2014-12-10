@@ -117,6 +117,12 @@ function ChangePwd:show( ... )
 end
 
 function ChangePwd:hide( ... )
+    if display.getRunningScene().parts["acc"] then
+        display.getRunningScene().parts["acc"]:setEnabled(true)
+    end
+    if display.getRunningScene().parts["pwd"] then
+        display.getRunningScene().parts["pwd"]:setEnabled(true)
+    end
 	self:removeSelf()
 	_.ChangePwd = nil
 end

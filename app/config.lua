@@ -64,11 +64,11 @@ CONFIG={
 			302,303,304,305,306,307,308,309,310,311,312,313,314,
 			402,403,404,405,406,407,408,409,410,411,412,413,414
 			},
-	-- selectRoom={
-	-- 			{name="一级荷官",min_b = 10,max_b = 500,min_buying = "1万",max_buying ="10万"},
-	-- 			{name="二级荷官",min_b = 1000,max_b = 10000,min_buying = "20万",max_buying ="200万"},
-	-- 			{name="三级荷官",min_b = 20000,max_b = 100000,min_buying = "400万",max_buying ="1亿"},
-	-- 		},
+	selectRoom={
+				{name="一级荷官",min_b = 10,max_b = 500,min_buying = "1万",max_buying ="10万"},
+				{name="二级荷官",min_b = 1000,max_b = 10000,min_buying = "20万",max_buying ="200万"},
+				{name="三级荷官",min_b = 20000,max_b = 100000,min_buying = "400万",max_buying ="1亿"},
+			},
 }
 
 USER ={
@@ -102,6 +102,8 @@ CMD = {
 	RSP_SHOPLIST	= 13,
 	REQ_BUY			= 14,
 	RSP_BUY			= 15,
+	CHAT 			= 2111,
+	CHAT_NTF 		= 2112,
 }
 
 ROOM_CMD = {

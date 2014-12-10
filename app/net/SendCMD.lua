@@ -164,5 +164,13 @@ function SendCMD:getShoplist(data)
     
 end
 
+function SendCMD:chat(msg,_type)
+    local packet = ByteArray.new()
+    packet:Begin(CMD.CHAT)
+    packet:writeString(msg)
+    packet:writeChar(_type)
+    packet:End()
+    self.socket:send(packet)
+end
 
 return SendCMD
