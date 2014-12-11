@@ -38,7 +38,7 @@ function SelectRoom:ctor()
             :addTo(self)   
 
     self.list = cc.ui.UIListView.new {
-                viewRect = cc.rect(0,0, display.width, display.height),
+                viewRect = cc.rect(0,130, display.width, 700),
                 direction = cc.ui.UIScrollView.DIRECTION_HORIZONTAL,
             }
             :onTouch(handler(self, self.touchListener))
@@ -90,7 +90,7 @@ function SelectRoom:ctor()
             :addTo(content)
 
         item:addContent(content)
-        item:setItemSize(530,display.height)
+        item:setItemSize(530,content:getContentSize().height)
         self.list:addItem(item)
     end
     self.list:reload()

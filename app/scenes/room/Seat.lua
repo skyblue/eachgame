@@ -87,15 +87,18 @@ function Seat:ctor(id,maxPlayer)
 end
 
 function Seat:initHead( )
+    -- local head = utils.makeAvatar({upic = "img/1px.png"})
     local head = utils.makeAvatar()
     head:setVisible(false)
     -- head.pic:setSpriteFrame(cc.SpriteFrameCache:getInstance():getSpriteFrame("room/null.png"))
     local clock = Clock.new()
     clock:setPosition(head._size.width/2, head._size.height/2-1)
     head:addChild(clock, 10)
+    -- clock:start()
+    self.parts["clock"] = clock
     self:addChild(head)
     self.parts["head"]  = head
-    self:startChipin()
+    -- self:startChipin()
 end
 
 function Seat:changeChipin(val)
@@ -113,7 +116,17 @@ function Seat:changeChipin(val)
 end
 
 function Seat:changePic(pic_path)
+    -- if not pic_path or pic_path == "" then
+    --     pic_path = self.model.usex == 0 and "img/f.png" or "img/m.png"
+    --     dump(pic_path)
+    --     local frame = display.newSpriteFrame(pic_path)
+    --     dump(frame)
+    --     -- self.parts["head"].pic:setSpriteFrame(frame)
+    --     return
+    -- end
+    dump(pic_path)
 	utils:loadRemote(self.parts["head"].pic,pic_path, function(succ, texture, sprite)
+        dump(succ)
         if not succ then return end
             scheduler.setTimeout(function()
                 if not sprite or tolua.isnull(sprite) then return end
@@ -252,13 +265,13 @@ function Seat:otherFlod()
     local t = distance /1500
     local a11 = cc.MoveTo:create(t,cc.p(ccp1.x,ccp1.y))
     local a12 = cc.RotateTo:create(t,-200)
-    local card1_action = cc.Spawn.new({a11,a12})
+    local card1_action = cc.Spawn:create({a11,a12})
     card1:runAction(card1_action)
 
     local a21 = cc.DelayTime:create(0.05)
     local a22 = cc.MoveTo:create(t,cc.p(ccp2.x,ccp2.y))
     local a23 = cc.RotateTo:create(t,120)
-    local card2_action = transition.sequence({a21,cc.Spawn.new({a22,a23})})
+    local card2_action = transition.sequence({a21,cc.Spawn:create({a22,a23})})
     card2:runAction(card2_action)
     self:performWithDelay(function ( ... )
         transition.stopTarget(card2)
@@ -338,7 +351,6 @@ function Seat:changePos(pos_id,isself)
     else
         small_cards:setPositionX(80)
         small_cards:setRotation(0)
-        small_cards:setPositionX(_size.width)
     end
 
     if isself then
@@ -384,18 +396,17 @@ function Seat:changeSitStatus(status) -- 0 坐下 1 空位 3 清空
 end
 
 function Seat:changeUser(udata)
+    dump(udata)
     if not (udata and udata.uid and udata.buying) then
         self:emptySit()
         return false
     end
     self.parts["head"]:setVisible(true)
     self:setVisible(true)
-    if not udata.isself then
-        self:changeName(udata.uname)
-    end
+    self:changeName(udata.uname)
     table.merge(self.model,udata)
     if USER.uid ~= udata.uid then
-        if udata.status == nil or table.indexOf({1,10}, udata.status) then --如果有牌，玩家坐下
+        if udata.status == nil or table.indexOf({0,1,10}, udata.status) then --如果有牌，玩家坐下
             self:setCardsVisible(false)  --隐藏牌
         else
             self:setCardsVisible(true)  --显示牌
@@ -410,9 +421,13 @@ function Seat:changeUser(udata)
 end
 
 function Seat:startChipin(data)
+    -- dump(self.parts)
+    dump(111)
+    dump(self.model)
     if self.parts["clock"] then
+        dump(222)
         -- self.parts["clock"]:setCardsVisible(true)
-        self.parts["clock"]:start(data.gap_sec,true)
+        self.parts["clock"]:start(data.gap_sec)
     end
 end
 

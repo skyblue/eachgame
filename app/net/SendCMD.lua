@@ -116,7 +116,6 @@ function SendCMD:loginToGameServer()
     packet:Begin(CMD.REQ_GAME_SERVER)
     packet:writeInt(USER.sessionkey)
     packet:End()
-    dump(USER.sessionkey)
     self.socket:send(packet)
 end
 

@@ -9,22 +9,20 @@ function ParseSocket:ctor()
 	SocketEvent:addEventListener("contented", function(event)
 
 		if self.contentType == 1 then 
-			--弹登陆框  ..math.random()
-			-- SendCMD:test()
 			local siginId = utils.setUserSetting("last_login_siginId",nil)
 			if siginId == nil then --没有就游客登陆 1
 				SendCMD:login("","",1,device.deviceID,device.platform == "ios" and 1 or 2,"1.0.0",100,1)
 			else  -- 0 自己的帐号登陆
+				--弹登陆框 
             	display.replaceScene(Login.new())
 			end
-			-- SendCMD:register("test","123456",0,"name","devid_test",device.platform == "ios" and 1 or 2,"1.0.0",100,1)
 		else
 			--连游戏服务器
 			if CONFIG.gameServer and CONFIG.gamePort then
 				SendCMD:loginToGameServer()
 			else
 				--弹登陆框
-				-- SendCMD:login()
+				display.replaceScene(Login.new())
 			end
 		end
 	end)
@@ -130,7 +128,7 @@ function ParseSocket:outTableNtf(packet)
 			end
 		end
 	-- end
-	SocketEvent:dispatchEvent({name = CMD.NTF_OUT_TABLE .. "back",data = uid})
+	SocketEvent:dispatchEvent({name = ROOM_CMD.NTF_OUT_TABLE .. "back",data = uid})
 end
 
 function ParseSocket:outTable(packet) 
@@ -172,7 +170,7 @@ function ParseSocket:finalGame(packet)
 		end
 		players[i] = player
 	end
-	SocketEvent:dispatchEvent(ROOM_CMD.RSP_FINAL_GAME .. "back",{data ={users =players,_type = _type}})
+	SocketEvent:dispatchEvent({name = ROOM_CMD.RSP_FINAL_GAME .. "back",data ={users =players,_type = _type}})
 end
 
 function ParseSocket:finalRound(packet) 
@@ -183,7 +181,7 @@ function ParseSocket:finalRound(packet)
 		pot = pots or {}
 	pots[#pots] = bottom_pots
 
-	SocketEvent:dispatchEvent(ROOM_CMD.RSP_FINAL_ROUND .. "back",{data ={round = round,round_pot =round_pot,bottom_pots=bottom_pots,pots=pots}})
+	SocketEvent:dispatchEvent({name = ROOM_CMD.RSP_FINAL_ROUND .. "back",data ={round = round,round_pot =round_pot,bottom_pots=bottom_pots,pots=pots}})
 end
 
 function ParseSocket:river(packet) --最后一轮，河牌
@@ -204,14 +202,14 @@ end
 
 function ParseSocket:handCard(packet)
 	local card = {packet:readChar(),packet:readChar()}
-	SocketEvent:dispatchEvent(ROOM_CMD.RSP_HAND_CARDS .. "back",{data = card})
+	SocketEvent:dispatchEvent({name =ROOM_CMD.RSP_HAND_CARDS .. "back",data = card})
 end
 
 function ParseSocket:readChipAction(packet)
 	local data = {}
 	data.uid = packet:readInt()
 	data.seatid = packet:readChar()
-	data._type = packet:readChar()
+	data.type = packet:readChar()
 	data.buying = packet:readInt()
 	data.chipin = packet:readInt()
 	return data
@@ -219,7 +217,7 @@ end
 
 function ParseSocket:chipinAction(packet)
 	local data = self:readChipAction(packet)
-	SocketEvent:dispatchEvent(ROOM_CMD.NTF_CHIP_ACTION .. "back",{data = data})
+	SocketEvent:dispatchEvent({name = ROOM_CMD.NTF_CHIP_ACTION .. "back",data = data})
 end
 
 function ParseSocket:chipinActionFailure(packet)
@@ -264,12 +262,13 @@ function ParseSocket:gameStart(packet)
 	local playerNum = packet:readChar()
 	local userSeatInfo = {}
 	for i=1,playerNum do
+		userSeatInfo[i] = {}
 		userSeatInfo[i].uid = packet:readInt()
 		userSeatInfo[i].seatid = packet:readChar()
 		userSeatInfo[i].buying = packet:readInt()
 	end
-	tableInfo.user = userSeatInfo
-	SocketEvent:dispatchEvent(ROOM_CMD.NTF_GAME_START .. "back",{data = tableInfo})
+	tableInfo.users = userSeatInfo
+	SocketEvent:dispatchEvent({name = ROOM_CMD.NTF_GAME_START .. "back",data = tableInfo})
 end
 
 function ParseSocket:userStandNtf(packet)
@@ -301,7 +300,7 @@ function ParseSocket:buying(packet)
 		else
 			
 		end
-		SocketEvent:dispatchEvent(ROOM_CMD.NTF_BUYING .. "back",{data = data})
+		SocketEvent:dispatchEvent({name = ROOM_CMD.NTF_BUYING .. "back",data = data})
 end
 
 function ParseSocket:userSitFailure(packet)
@@ -347,47 +346,60 @@ function ParseSocket:inTable(packet)
 	if flag == 0 then
 		local tableInfo = self:readRoomBaseInfo(packet)
 		tableInfo.pots = packet:readInt()
-		tableInfo.edge_pots = self:readCharArrayData(packet)
-		tableInfo.public_cards = self:readCharArrayData(packet)
-
+		tableInfo.public_cards = {packet:readChar(),packet:readChar(),packet:readChar(),packet:readChar(),packet:readChar()}
 		local playerNum = packet:readChar()
+		local edgeNum = packet:readChar()
 		local has_focus = packet:readChar()
-		tableInfo.user={}
-		for i=1,playerNum do
-			tableInfo.user[i] = self:readUserBaseInfo(packet)
-			------
-			tableInfo.user[i].uchips = packet:readInt()
-			-------
-			tableInfo.user[i].seatid = packet:readChar()
-			tableInfo.user[i].chipin = packet:readInt()
-			tableInfo.user[i].buying = packet:readInt()
-			tableInfo.user[i].status = packet:readChar()
+		for i=1,edgeNum do
+			tableInfo.edge_pots[i] = packet:readChar()
 		end
+		tableInfo.users={}
+		
 		if has_focus == 1 then
-			tableInfo.currPlayer = self:readChipInfo(packet)
+			tableInfo.currPlayer = {}
+			tableInfo.currPlayer.uid = packet:readInt()
+			tableInfo.currPlayer.seatid = packet:readChar()
+			tableInfo.currPlayer.need_call = packet:readInt()
+			tableInfo.currPlayer.min_raise = packet:readInt()
+			tableInfo.currPlayer.max_raise = packet:readInt()
+			tableInfo.currPlayer.gap_sec = packet:readInt() - CONFIG.clinet_diftime - os.time()
 		end
-
+		for i=1,playerNum do
+			tableInfo.users[i] = self:readUserBaseInfo(packet)
+			------
+			tableInfo.users[i].uchips = packet:readInt()
+			-------
+			tableInfo.users[i].seatid = packet:readChar()
+			tableInfo.users[i].chipin = packet:readInt()
+			tableInfo.users[i].buying = packet:readInt()
+			tableInfo.users[i].status = packet:readChar()
+			if tableInfo.currPlayer and tableInfo.currPlayer.uid == tableInfo.users[i].uid then
+				tableInfo.currPlayer.chipin = tableInfo.users[i].chipin
+			end
+		end
 		SocketEvent:dispatchEvent({name = CMD.RSP_IN_TABLE .. "back",data =tableInfo})
 	else
 		utils.dialog("", LANG["RSP_IN_TABLE_"..flag],{"确定"})
 	end
 end
 
-function ParseSocket:readChipInfo(packet)
+function ParseSocket:startChipinAction(packet)
 	local data = {}
-	data.uid = packet:readInt()
 	data.seatid = packet:readChar()
+	data.uid = packet:readInt()
 	data.need_call = packet:readInt()
 	data.min_raise = packet:readInt()
 	data.max_raise = packet:readInt()
 	data.chipin = packet:readInt()
+		-- int 服务器发包的时候操作结束的时间
+		-- CONFIG.clinet_diftime 服务器和客户端的时间差
+		-- os.time() + CONFIG.clinet_diftime 同步的服务器时间
+		-- data.time - os.time() + CONFIG.clinet_diftime 数据在传输过程中的延时
+		-- room.model.gap_seci 当前房间的操作时间
+		-- data.gap_sec 还剩下的操作时间
+		-- data.gap_sec = data.time - os.time() + CONFIG.clinet_diftime + room.model.gap_sec
 	data.gap_sec = packet:readInt() - CONFIG.clinet_diftime - os.time()
-	return data
-end
-
-function ParseSocket:startChipinAction(packet)
-	local data = self:readChipInfo(packet)
-	SocketEvent:dispatchEvent({name = CMD.NTF_START_ACTION .. "back",data =data})
+	SocketEvent:dispatchEvent({name = ROOM_CMD.NTF_START_ACTION .. "back",data =data})
 end
 
 function ParseSocket:loginSuccess(packet)

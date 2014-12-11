@@ -143,9 +143,9 @@ CON__USER_CHECK = 2;--看牌
 CON__USER_CALL  = 3;--跟注
 CON__USER_RAISE = 4;--加注
 CON__USER_ALLIN = 5;--全下
-CHIPIN_SMALL 	= 6;--小盲注
-CHIPIN_BIG 		= 7;--大盲注
-CON__USER_BET   = 8;--下注
+CON__USER_BET   = 6;--下注
+CHIPIN_SMALL 	= 7;--小盲注
+CHIPIN_BIG 		= 8;--大盲注
 CHIPIN_NONE 	= 9;--未说话
 CHIPIN_WAIT 	= 10;--等待下一轮
 

@@ -9,6 +9,7 @@ function Event:init(room)
 	local seats =  room.parts["seats"]
 	SocketEvent:addEventListener(ROOM_CMD.NTF_GAME_START .. "back", function(event)
 		local data = event.data
+		room.model = data
 		room.model._resetSeats = false
 		--清理下状态
 		for i,seat in ipairs(seats) do
@@ -23,7 +24,7 @@ function Event:init(room)
 	    end
 
         -- 更新buying和处理台费
-	    for k, v in pairs(data.user)  do
+	    for k, v in pairs(data.users)  do
 	        local seat = seats[v.seatid]
 	        -- if seat.model.uid > 0 then
 	        if seat.model.uid == v.uid then
@@ -60,8 +61,9 @@ function Event:init(room)
     end)
 
     SocketEvent:addEventListener(ROOM_CMD.RSP_FINAL_ROUND .. "back", function(event)
+    	local data = event.data
     	local seats = room.parts["seats"]
-    	if _i(data.round_pot) == 0 then return end
+    	if checkint(data.round_pot) == 0 then return end
 
     	scheduler.performWithDelayGlobal(function (  )
     		-- local s = {2,3,4,6,7,8}   --  {1,5,10} 不清除状态
@@ -197,8 +199,9 @@ function Event:init(room)
    	SocketEvent:addEventListener(ROOM_CMD.NTF_OUT_TABLE .. "back", function(event)
     	-- Room:exit()
     	-- display.replaceScene(_.Hall)
+    	dump(event.data)
     	for i,v in ipairs(room.parts["seats"]) do
-    		if v.model.uid == event.data.uid then
+    		if v.model.uid == event.data then
     			v:changeUser(nil)
     		end
     	end
@@ -232,6 +235,7 @@ function Event:init(room)
 
     SocketEvent:addEventListener(ROOM_CMD.NTF_CHIP_ACTION .. "back", function(event)
     	local data = event.data
+		dump(data)
 		local seat = room.parts["seats"][data.seatid]
 		if data.uid == USER.uid then
 			room.parts["action"]:stopChipin()
@@ -258,28 +262,25 @@ function Event:init(room)
 
     SocketEvent:addEventListener(ROOM_CMD.NTF_START_ACTION .. "back", function(event)
 		local data = event.data
-		-- data.time 服务器发包的时候
-		-- CONFIG.clinet_diftime 服务器和客户端的时间差
-		-- os.time() + CONFIG.clinet_diftime 同步的服务器时间
-		-- data.time - os.time() + CONFIG.clinet_diftime 数据在传输过程中的延时
-		-- room.model.gap_seci 当前房间的操作时间
-		-- data.gap_sec 还剩下的操作时间
-		data.gap_sec = data.time - os.time() + CONFIG.clinet_diftime + room.model.gap_sec
+		
+		dump(data)
 		data.gap_sec = data.gap_sec or room.model.gap_sec
 		local seat = room.parts["seats"][data.seatid]
+		dump(room.parts["seats"])
 		if data.uid == USER.uid then
 			if seat.model.status == 1 then return end --已弃牌则不处理
 			if data.chipin>0 then
 	            seat.model.chipin = data.chipin
 	        end
-	        room.parts["action"]:startChipin(data)
+	        dump(seat.model)
+	        room.parts["action"]:startChipin(data,seat)
 		else
+			dump(seat.model)
 			seat:startChipin(data)
 		end
 		-- 清除上次状态
 		seat:changeStatus(0)
 	end)
-
 
     SocketEvent:addEventListener(ROOM_CMD.NTF_USER_SIT .. "back", function(event)
 		local data = event.data
@@ -288,7 +289,6 @@ function Event:init(room)
 	    if not seat or checknumber(seat.model.uid) > 0 then return end
 		data.status = data.status or 10
 
-		-- dump(USER.uid == data.uid )
 		if USER.uid == data.uid then
         	-- if checkint(USER.seatid) > 0 then return end
         	room:resetSeats(seat.model.id, data._quickResetPos)
@@ -296,7 +296,6 @@ function Event:init(room)
         	data._quickResetPos = nil
         end
 		seat:changeUser(data)
-
 	end)
 
 	SocketEvent:addEventListener(ROOM_CMD.RSP_HAND_CARDS .. "back", function(event)

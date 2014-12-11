@@ -64,8 +64,8 @@ function Room:initRoomWithData(data)
             :align(display.CENTER,240,display.top - 81)
             :addTo(self)
     self:initPot(data)
-    self:setDealer(data.dealer)
     self:initSeats()
+    self:setDealer(data.dealer)
     for id,u in pairs(data.users) do
         if u.uid == USER.uid then
             self.model._resetSeats = true
@@ -76,10 +76,20 @@ function Room:initRoomWithData(data)
     if #data.public_cards > 0 then
         self.parts["public_cards"]:showCard(1,#data.public_cards,data.public_cards)
     end
-    if data.currPlayer then
-        self.parts["action"]:startChipin(data.currPlayer,self.parts["seats"][data.currPlayer.seatid])
+    if data.currPlayer and data.currPlayer.uid ==  USER.uid then
+        self:performWithDelay(function ( )
+            data.currPlayer.gap_sec = data.currPlayer.gap_sec -1
+            if data.currPlayer.gap_sec > 0 then
+                self.parts["action"]:startChipin(data.currPlayer,self.parts["seats"][data.currPlayer.seatid])
+            end
+        end, 1)
     end
     self.load = true
+
+    dump("room load ok ...................................")
+    dump("room load ok ...................................")
+    dump("room load ok ...................................")
+    dump("room load ok ...................................")
     _.Event:init(self)
 end
 
@@ -307,7 +317,7 @@ end
 --游戏开始时发牌动画
 function Room:startDealCard(roomdata,cards)
     local data = {}
-    for i,v in ipairs(roomdata.user) do
+    for i,v in ipairs(roomdata.users) do
         data[i] = v.seatid
     end
     local start_seat = roomdata.sSeat
@@ -319,9 +329,8 @@ function Room:startDealCard(roomdata,cards)
     for i=1,start_seat-1 do
         data_arr[#data_arr +1 ] = data[i]
     end
-    dump(data_arr)
     data = data_arr
-    local batch = display.newBatchNode("img/card.png",10)
+    local batch = display.newBatchNode("img/poker.png",10)
     batch:setPosition(display.cx,display.height-270)
     self:addChild(batch,20)
     local fun = function(cardcheckintum)
@@ -387,7 +396,7 @@ function Room:startDealCard(roomdata,cards)
                             -- batch:removeSelf(true)
                             if cards then
                                 self.parts["action"]:changeCard(cards)
-                                room:showCardLine()
+                                self:showCardLine()
                             end
                         end, 0.1)
                     end
@@ -442,12 +451,12 @@ function Room:showCardLine()
 end
 
 function Room:hideCardLine()
+    local  hand_cards = self.parts["action"].parts["hand_cards"]
     local all_cards = {}
     local hand_cards_cards = {hand_cards.card1,hand_cards.card2}
     table.append(all_cards,hand_cards_cards)
-    table.append(all_cards,room.parts['public_cards'].cards)
-
-    for i, c in ipairs(allcards) do
+    table.append(all_cards,self.parts['public_cards'].cards)
+    for i, c in ipairs(all_cards) do
         c:hideline()
     end
     return all_cards

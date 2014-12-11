@@ -17,8 +17,8 @@ function PublicCard:showCard(from,to,val)
 	local delay = 0
 	for i=from,to do
 		card = self.cards[i]
-		card:setVisible(true)
-		if card.value ~= val[i] then
+		if card.value ~= val[i] and val[i] > 0 then
+			card:setVisible(true)
 			card:changeVal(val[i])
 		end
 	end

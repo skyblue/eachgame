@@ -79,7 +79,7 @@ end
 function Clock:stop()
     color1 = 38
     color2 =230
-    self.round:setColor(ccc3(color1,color2,0))
+    self.round:setColor(cc.c3b(color1,color2,0))
     self:unscheduleUpdate()
     transition.stopTarget(self.arc)
     self:setVisible(false)

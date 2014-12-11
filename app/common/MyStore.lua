@@ -37,7 +37,7 @@ end
 function MyStore:show()
     -- if self.data then
 
-        local bg = display.newSprite("#common/myinfo-bg.png",display.cx,display.cy)
+        local bg = display.newSprite("img/myinfo-bg.png",display.cx,display.cy)
         :addTo(self)
         cc.ui.UIPushButton.new("#common/close_icon.png")
             :align(display.CENTER,bg:getContentSize().width-150,bg:getContentSize().height-92)

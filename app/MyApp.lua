@@ -38,7 +38,7 @@ function MyApp:run()
 
     _.ParseSocket = ParseSocket.new()
     
-self:enterScene("SelectRoom")
+-- self:enterScene("SelectRoom")
 -- 
 -- self:enterScene("Hall")
 

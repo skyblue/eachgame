@@ -192,9 +192,9 @@ end
 function SocketEvent:processServerMsg()
     self.readPacket:setPos(1)
     local packet = self.readPacket
-    -- dump("dispatch packet len  --  " .. packet:getLen())
+    dump("dispatch packet len  --  " .. packet:getLen())
     local cmd = packet:getBeginCmd()
-    -- dump("process cmd=" .. cmd)
+    dump("process cmd=" .. cmd)
     self:dispatchEvent({name = "onServerData", data= packet})
 end
 

@@ -5,7 +5,7 @@ end)
 
 function MainScene:ctor()
     display.addSpriteFrames("img/common.plist","img/common.png")
-    display.addSpriteFrames("img/card.plist","img/card.png")
+    display.addSpriteFrames("img/poker.plist","img/poker.png")
     display.addSpriteFrames("img/chip.plist","img/chip.png")
     -- cc.ui.UILabel.new({
     --         UILabelType = 2, text = "Hello, World", size = 64})

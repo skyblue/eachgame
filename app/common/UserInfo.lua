@@ -1,7 +1,7 @@
 local UserInfo = class("UserInfo",display.newNode)
 
 function UserInfo:initMyInfo()
-	local bg = display.newSprite("#common/myinfo-bg.png",display.cx,display.cy)
+	local bg = display.newSprite("img/myinfo-bg.png",display.cx,display.cy)
     :addTo(self)
     bg:setVisible(false)
     local head = utils.makeAvatar(nil,cc.size(216, 216),nil,nil,2)

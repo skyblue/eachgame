@@ -571,9 +571,13 @@ function utils.makeAvatar(udata, size, dia, callback, mask1)
 
     -- local border = display.newSprite("#common/head-border.png", size.width/2, size.height/2)
     -- head:addChild(border,10);
-
-    local def_pic = udata.sex == 0 and "img/f.png" or "img/m.png"
-    local pic     = display.newSprite(def_pic)
+    local pic
+    if udata.upic == "img/1px.png" then
+        pic = display.newSprite(udata.upic)
+    else
+        local def_pic = udata.usex == 0 and "img/f.png" or "img/m.png"
+        pic = display.newSprite(def_pic)
+    end
     local maskPic = "img/head-mask.png"
     if mask1 == 1 then
         maskPic = "img/head-mask1.png"
@@ -620,7 +624,7 @@ function utils:loadRemote(sprite,url, callback)
     local _key = crypto.md5(url)
     if _key == sprite.__key then return end
     sprite.__key = _key
-    local texture = shareCache:textureForKey(_key)
+    local texture = shareCache:getTextureForKey(_key)
 
     if texture  and not tolua.isnull(texture)  and tolua.type(texture) == "CCTexture2D" then
         if type(callback) == "function" then
@@ -669,7 +673,7 @@ function utils.loadImage(url,cb)
         --     flush = true
         -- end
         local key = crypto.md5(url)
-        local save_path = device.cachePath.."/networkcache/" .. key
+        local save_path = device.writablePath.."/networkcache/" .. key
         -- if not flush and io.exists(save_path) and io.filesize(save_path) > 100 then
         if io.exists(save_path) and io.filesize(save_path) > 100 then
             return cb(true, save_path, true)
@@ -683,7 +687,7 @@ function utils.loadImage(url,cb)
                 statusCode = request:getResponseStatusCode()
             end
             if ok and errCode == 0 and statusCode == 200 then
-                request:saveResponseData(save_path)
+                -- request:saveResponseData(save_path)
                 print(string.format("load %s success! >>> statusCode:%d,errorCode:%d",url,statusCode,errCode))
                 return cb(true, save_path, false)
             elseif event.name == "progress" then
@@ -791,7 +795,6 @@ function device.getDeviceID()
     end
     return r
 end
-dump( math.random(2,13))
 device.deviceID = "test_deviceid_".. math.random(2,13)
 -- device.deviceId = device.getDeviceID()
 

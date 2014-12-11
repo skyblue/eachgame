@@ -3,8 +3,8 @@ local Action = class("Action",display.newNode)
 function Action:ctor()
 	self.parts = {}
     self.steps ={}
-    self:initBtn()
     self:initRaise()
+    self:initBtn()
     self:initHandCard()
 end
 
@@ -51,7 +51,7 @@ function Action:initRaise()
     local chipin =display.newSprite("#room/raise-handle.png",154,104)
         :addTo(mask)
     chipin.lable = cc.ui.UILabel.new({
-            text = "$ 900", 
+            text = "", 
             size = 30,
             color = cc.c3b(255,255,255),
             font = "Helvetica-Bold"})
@@ -137,7 +137,6 @@ function Action:initBtn()
                 end)
                 :onButtonClicked(self:action(CON__USER_CHECK))
                 :addTo(self)
-    parts["cycle-check"]:setVisible(false)
 
     parts["cycle-fold"] = cc.ui.UIPushButton.new("#common/green-btn.png", {scale9 = true})
                 :setButtonSize(280, 104)
@@ -151,7 +150,6 @@ function Action:initBtn()
                 end)
                 :onButtonClicked(self:action(CON__USER_FOLD))
                 :addTo(self)
-    parts["cycle-fold"]:setVisible(false)
     parts["cycle-call"] = cc.ui.UIPushButton.new("#common/green-btn.png", {scale9 = true})
                  :setButtonSize(280, 104)
                 :setButtonLabel(cc.ui.UILabel.new({text = "跟注", size = 40, font = "Helvetica-Bold"}))
@@ -164,15 +162,16 @@ function Action:initBtn()
                 end)
                 :onButtonClicked(self:action(CON__USER_CALL))
                 :addTo(self)
-    parts["cycle-call"]:setVisible(false)
-                -- :setColor(cc.c3b())
+
+    self:hideAction()
 end
 
 
 function Action:startChipin(data,seat)
     self:hideAction()
     self.parts['cycle-fold']:setVisible(true)
-
+    dump(data)
+    dump(seat.model)
     self.seat = seat
     -- utils.playSound("轮到玩家");
     self._activating = true
@@ -215,7 +214,7 @@ function Action:startChipin(data,seat)
             val = data.buying
         end
         self.parts['cycle-call'].value = val
-        self.parts["cycle-call"].callNum:getButtonLabel():setString(utils.numAbbr(val))
+        -- self.parts["cycle-call"].callNum:getButtonLabel():setString(utils.numAbbr(val))
 
         if self.parts['cycle-raise'].action == "bet" then
             self.parts['cycle-raise'].action = "raise"
@@ -226,7 +225,7 @@ function Action:startChipin(data,seat)
     if(data._can_raise) then
         self.parts['cycle-raise']:setVisible(true)
     end
-    self.seat.startChipin(data)
+    self.seat:startChipin(data)
     -- self.parts["clock"]:start(data.gap_sec, true)
     -- local sec = self.parts["clock"].second
     self._tid_vibrate = scheduler.performWithDelayGlobal(function ( )

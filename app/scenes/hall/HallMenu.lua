@@ -13,7 +13,6 @@ function HallMenu:ctor()
         _.SelectRoom = SelectRoom.new()
         display.replaceScene(_.SelectRoom)
     end)
-    dump(12312321)
 	local toroom = cc.ui.UIPushButton.new("#hall/to-room.png")
                 :pos(display.width - 264 ,display.cy + 74)
                 :onButtonPressed(function(event)
@@ -50,8 +49,8 @@ end
 
 function HallMenu:toGame()
 	return function ( event )
-        dump("in table")
-        SendCMD:toGame()
+        -- dump("in table")
+        SendCMD:toGame(2)
 	end
 end
 
