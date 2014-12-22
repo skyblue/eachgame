@@ -75,7 +75,6 @@ function ChangePwd:ctor()
             :onButtonClicked(function (event)
             		local params = {user_name = USER.account,send_type = 1}
             		params.sign = utils.genSig(params)
-                   dump("发送验证码")
                    utils.http(CONFIG.EachGame_URL .. "user/sendverifycode",params)
             end)
             :addTo(self)
@@ -106,7 +105,7 @@ function ChangePwd:ctor()
 	                    -- sprite:runAction(cc.TintBy:create(0,255,255,255))
 	            end)
 	            :onButtonClicked(function (event)
-	                   dump("注册")
+
 	            end)
 	            :addTo(self)
 end

@@ -1,42 +1,16 @@
 MyStore = class("MyStore",display.newNode)
 
-local Store = require("framework.cc.sdk.Store")
 local UIScrollView = require("framework.cc.ui.UIScrollView")
 
 function MyStore:ctor()
-	-- SendCMD:getShoplist({appid =  CONFIG.appid,versioncode = CONFIG.versioncode})
-	SocketEvent:addEventListener(CMD.RSP_SHOPLIST .. "back", function(event)
-		self.data = event.data
-		self:loadProducts(self.data)
-        -- if display.getRunningScene().name == "MyStore" then
-        --     self:init()
-        -- end
-    end)
-
-    SocketEvent:addEventListener(CMD.RSP_BUY .. "back", function(event)
-    	local data = event.data
-    	device.hideActivityIndicator()
-        device.cancelAlert()
-        if not data.uid or (data.code and data.code > 10) then --数据验证错误 IAP破解插件
-            utils.notice("购买失败","您的订单信息有误，请确认后重试。",{"关闭"})
-            return
-        end
-
-        if data.status == 6 then --延时发货
-            utils.notice("购买成功","我们正在处理您的订单，筹码将会延时到帐（24 小时内）。",{"确认"})
-        else
-            utils.notice("购买成功","您的订单已成功。",{"确认"})
-        end
-        self:updatePayCount()
-        -- Analytics.event("购买成功")
-    end)
+   
 	
-    self:initStore()
+    -- self:initStore()
+    -- self:init()
 end
 
-function MyStore:show()
-    -- if self.data then
-
+function MyStore:init()
+    if MyStore.data then
         local bg = display.newSprite("img/myinfo-bg.png",display.cx,display.cy)
         :addTo(self)
         cc.ui.UIPushButton.new("#common/close_icon.png")
@@ -49,6 +23,7 @@ function MyStore:show()
             end)
             :onButtonClicked(function (event)
                     self:hide()
+                    utils.playSound("click")
             end)
             :addTo(bg)
         self.list = cc.ui.UIListView.new {
@@ -57,25 +32,10 @@ function MyStore:show()
             }
         :addTo(bg)
         cc.ui.UILabel.new({text = "商城" , size = 60})
-                :align(display.CENTER,display.cx,display.top - 150)
-                :addTo(self)
+                :align(display.CENTER,display.cx,bg:getContentSize().height-120)
+                :addTo(bg)
         local height,item,line,content = 100
-        self.data = {{chips = 100000,addChips = 10000,unit = "￥",money = 20,proid ="com.eg.texas.c6"},
-        {chips = 100000,addChips = 10000,unit = "￥",money = 20,proid ="com.eg.texas.c6"},
-        {chips = 100000,addChips = 10000,unit = "￥",money = 20,proid ="com.eg.texas.c6"},
-        {chips = 100000,addChips = 10000,unit = "￥",money = 20,proid ="com.eg.texas.c6"},
-        {chips = 100000,addChips = 10000,unit = "￥",money = 20,proid ="com.eg.texas.c6"},
-        {chips = 100000,addChips = 10000,unit = "￥",money = 20,proid ="com.eg.texas.c6"},
-        {chips = 100000,addChips = 10000,unit = "￥",money = 20,proid ="com.eg.texas.c6"},
-        {chips = 100000,addChips = 10000,unit = "￥",money = 20,proid ="com.eg.texas.c6"},
-        {chips = 100000,addChips = 10000,unit = "￥",money = 20,proid ="com.eg.texas.c6"},
-        {chips = 100000,addChips = 10000,unit = "￥",money = 20,proid ="com.eg.texas.c6"},
-        {chips = 100000,addChips = 10000,unit = "￥",money = 20,proid ="com.eg.texas.c6"},
-        {chips = 100000,addChips = 10000,unit = "￥",money = 20,proid ="com.eg.texas.c6"},
-        {chips = 100000,addChips = 10000,unit = "￥",money = 20,proid ="com.eg.texas.c6"}}   
-
-        for k,v in pairs(self.data) do
-            -- dump(v)
+        for k,v in pairs(MyStore.data) do
             item = self.list:newItem()
             content = display.newNode()
                 -- :pos(bg:getContentSize().width/2,yy)
@@ -109,119 +69,104 @@ function MyStore:show()
             item:setItemSize(bg:getContentSize().width,height)
             self.list:addItem(item)
         end
+        self.load = true
         self.list:reload()
-    -- else 
-    --     SendCMD:getShoplist({appid =  CONFIG.appid,versioncode = CONFIG.versioncode})
-    -- end 
+    else 
+        SendCMD:getShoplist()
+    end
+    self:hide()
 end
 
-function MyStore:loadProducts(data)
+function MyStore:hide()
+    self:setVisible(false)
+end
+
+function MyStore:show()
+    if not self.load then
+        self:init()
+    end
+    self:setVisible(true)
+end
+
+function MyStore.loadProducts(data)
     local productIds = {}
     for i,r in ipairs(data) do
         table.insert(productIds, r.proid)
     end
-    -- local t1 = os.clock()
     Store.loadProducts(productIds, function ( products )
-        self.products = products
-        -- console.log("请求products耗时:",(os.clock() - t1)/1000 )
+        for k,v in pairs(products["products"]) do
+            MyStore.products[v.productIdentifier] = v.productIdentifier
+        end
     end)
 end
 
-function MyStore:initStore(productIds)
+function MyStore.initStore(productIds)
 
    function transactionCallback(event)
         local transaction = event.transaction
-        if transaction.state ~="purchased" then
-            device.hideActivityIndicator()
-            device.cancelAlert()
-        end
+        device.hideActivityIndicator()
         if transaction.state == "purchased" then
-            -- print("Transaction succuessful!")
-            -- print("productId", transaction.productIdentifier)
-            -- print("quantity", transaction.quantity)
-            -- print("transactionIdentifier", transaction.transactionIdentifier)
-            -- print("date", os.date("%Y-%m-%d %H:%M:%S", transaction.date))
-            -- print("receipt", transaction.receipt)
-            -- print("originalDate", transaction.originalDate)
-
-            -- 整理数据发回服务器
             local receipt = transaction.receipt
             local params = {
                 productId = transaction.productIdentifier,
                 transactionIdentifier = transaction.transactionIdentifier,
-                -- sandbox = DEBUG > 1 and 1 or 0
+                sandbox = DEBUG > 1 and 1 or 0
             }
 
-            params["receipt-data"] = crypto.encodeBase64(transaction.receipt)  --出来的结果带有换行符
-            params["receipt-data"] = string.gsub(params["receipt-data"], "\n", "")
-            -- params["receipt-data"] = string.urlencode(params["receipt-data"])
-            if DEBUG > 0 then
-                params.sandbox = 1
-            end
-
+            params["receipt_data"] = crypto.encodeBase64(transaction.receipt)  --出来的结果带有换行符
+            params["receipt_data"] = string.gsub(params["receipt_data"], "\n", "")
             params["pf"] = "appstore"
-            for i,v in ipairs(USER.sendChips) do
-                if v[2] == transaction.productIdentifier then
-                    params["to_uid"] = v[1]
-                    table.remove(USER.sendChips,i)
-                    break
-                end
-            end
+            -- for i,v in ipairs(USER.sendChips) do
+                -- if v[2] == transaction.productIdentifier then
+                    params["to_uid"] = USER.uid--v[1]
+                    -- table.remove(USER.sendChips,i)
+                    -- break
+                -- end
+            -- end
             SendCMD:buy(params)
-
         elseif  transaction.state == "restored" then
-            -- print("Transaction restored (from previous session)")
-            -- print("productId", transaction.productIdentifier)
-            -- print("receip:t", transaction.receipt)
-            -- print("transactionIdentifier", transaction.identifier)
-            -- print("date", transaction.date)
-            -- print("originalReceipt", transaction.originalReceipt)
-            -- print("originalTransactionIdentifier", transaction.originalIdentifier)
-            -- print("originalDate", transaction.originalDate)
         elseif transaction.state == "failed" then
-            utils.notice("","支付失败，请重试",{"关闭"})
-            console.error("errorCode", transaction.errorCode)
-            console.error("errorString", transaction.errorString)
+            utils.dialog("","支付失败，请重试",{"关闭"})
+            -- dump("errorCode", transaction.errorCode)
+            -- dump("errorString", transaction.errorString)
         else
             --取消支付会触发
-            console.warn("unknown event")
+            -- dump("取消支付会触发 unknown event")
         end
         Store.finishTransaction(transaction)
     end
-    -- Store.init(transactionCallback)
+    Store.init(transactionCallback)
 end
 
 function MyStore:buyItem(data)
-    dump(data)
     local proid = data.proid
     if not Store.canMakePurchases() then
-        utils.notice("","您当前不能支付",{"确认"})
+        utils.dialog("","您当前不能支付",{"确认"})
         return
     end
     device.showActivityIndicator("连接App Store中…")
 
-    local tid = scheduler.performWithDelayGlobal(function( ... )
+    local tid = self:performWithDelay(function( ... )
         device.showActivityIndicator("连接App Store超时…")
-        scheduler.performWithDelayGlobal(function( ... )
+        self:performWithDelay(function( ... )
             device.hideActivityIndicator()
         end, 1)
     end, 30)
-
-    if self.products[proid] then
+    if MyStore.products[proid] then
         Store.purchase(proid)
-        scheduler.clearTimeout(tid)
+        transition.removeAction(tid)
         -- Analytics.event("购买开始")
     else
         Store.loadProducts({proid}, function ( data )
             if data['invalidProductsId'] then
                 device.hideActivityIndicator()
-                scheduler.clearTimeout(tid)
-                utils.notice("","该商品当前无法购买",{"确认"})
+                transition.removeAction(tid)
+                utils.dialog("","该商品当前无法购买",{"确认"})
                 return
             end
-            self.products[proid] = data["products"][1]
-            self.purchase(proid)
-            scheduler.clearTimeout(tid)
+            transition.removeAction(tid)
+            MyStore.products[proid] = data["products"][1].productIdentifier
+            Store.purchase(proid)
             -- Analytics.event("购买开始")
         end)
     end

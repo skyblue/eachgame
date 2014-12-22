@@ -9,11 +9,11 @@ require("framework.init")
 math.newrandomseed()
 utils         = require("app.tools.utils")
 require("app.tools.libext")
--- if device.platform == "android" then
---     luaj = require(cc.PACKAGE_NAME .. ".luaj")
--- elseif device.platform == "ios" then
+if device.platform == "android" then
+    luaj = require(cc.PACKAGE_NAME .. ".luaj")
+elseif device.platform == "ios" then
     luaoc = require(cc.PACKAGE_NAME .. ".luaoc")
--- end
+end
 require("app.tools.update")
 
 

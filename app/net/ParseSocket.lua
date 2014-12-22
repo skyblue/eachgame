@@ -6,14 +6,47 @@ SendCMD = require("app.net.SendCMD").new(SocketEvent)
 function ParseSocket:ctor()
 	self.contentType = 1
 	SocketEvent:init(CONFIG.server ,CONFIG.port ,false) 
-	SocketEvent:addEventListener("contented", function(event)
 
+	local timeout_num,tid = 0
+	local function reCon ( msg )
+		timeout_num = 0
+    	if tid then
+        	scheduler.unscheduleGlobal(tid)
+        end
+        utils.dialog("", msg,{"重试"},function(event)
+        	SendCMD:changeToGameServer()
+        	heart()
+        end)
+	end
+    local function heart(  )
+    	return scheduler.scheduleGlobal(function()
+    		if display.getRunningScene().name == "Login" then return end
+	        if timeout_num >= 5 then
+	        	reCon("连接超时，请重新连接")
+	        else
+	        	SendCMD:heart()
+	        	timeout_num = timeout_num + 1
+	        end
+	    end, 4)
+    end
+    tid = heart()
+
+	SocketEvent:addEventListener("closed", function(event)
+		reCon("网络连接被断开，请重新连接")
+	end)
+	SocketEvent:addEventListener("failure", function(event)
+		reCon("连接失败，请检查您的网络！")
+	end)
+
+
+	SocketEvent:addEventListener("contented", function(event)
 		if self.contentType == 1 then 
 			local siginId = utils.setUserSetting("last_login_siginId",nil)
 			if siginId == nil then --没有就游客登陆 1
-				SendCMD:login("","",1,device.deviceID,device.platform == "ios" and 1 or 2,"1.0.0",100,1)
+				SendCMD:login("","",1)
 			else  -- 0 自己的帐号登陆
-				--弹登陆框 
+				-- 弹登陆框 
+				_.Loading:hide()
             	display.replaceScene(Login.new())
 			end
 		else
@@ -26,15 +59,15 @@ function ParseSocket:ctor()
 			end
 		end
 	end)
+			
 
-	-- SocketEvent:addEventListener("closed", function(event)
-	-- 	self.contentType == 1
-	-- end)
 	SocketEvent:addEventListener("onServerData", function(event)
 			local packet = event.data
 			packet:setPos(1)
 			local cmd = packet:getBeginCmd()
-			dump("cmd -----》》》  "..cmd)
+			if DEBUG > 0 and cmd > 0 then
+				dump("cmd -----》》》  "..cmd)
+			end
 			--如果房间还没初始化完成，把房间命令的数据丢掉
 			if table.indexof(ROOM_CMD,cmd) and not _.Room.load then
 				return
@@ -46,6 +79,9 @@ function ParseSocket:ctor()
 			end
 		end)  
 	self.fun = {}
+	self.fun["fun"..CMD.HEART] = function()
+		timeout_num = 0
+	end
 	self.fun["fun"..CMD.RSP_LOGIN] = self.loginSuccess
 	self.fun["fun"..CMD.RSP_USER_INFO] = self.userInfo
 	self.fun["fun"..CMD.RSP_GAME_SERVER] = self.loginToGameSuccess
@@ -54,6 +90,10 @@ function ParseSocket:ctor()
 	self.fun["fun"..CMD.RSP_CHANGE_PIC] = self.changePic
 	self.fun["fun"..CMD.RSP_CHANGE_UNAME] = self.changeUname
 	self.fun["fun"..CMD.RSP_CHANGE_SEX] = self.changeSex
+	self.fun["fun"..CMD.RSP_SHOPLIST] = self.shoplist  
+	self.fun["fun"..CMD.RSP_BUY] = self.buy
+	self.fun["fun"..CMD.RSP_MISSION_COM] = self.completeMission
+
 	----------
 	self.fun["fun"..ROOM_CMD.NTF_USER_SIT] = self.userSit
 	self.fun["fun"..ROOM_CMD.RSP_USER_SIT] = self.userSitFailure
@@ -78,11 +118,53 @@ function ParseSocket:ctor()
 
 end
 
+function ParseSocket:completeMission(packet)
+	local flag = packet:readChar()
+	if flag ~= 0 then
+		utils.dialog("", LANG["RSP_MISSION_COM_"..flag],{"确定"})
+	else
+		USER.uchips = packet:readInt()
+		USER.exp = packet:readInt()
+		USER.score = packet:readInt()
+		SocketEvent:dispatchEvent({name = CMD.RSP_BUY .. "back"})
+	end
+end
+
+function ParseSocket:buy(packet)
+	local flag = packet:readChar()
+	USER.uchips = packet:readInt()
+	if flag ~= 0 then
+		utils.dialog("", LANG["RSP_BUY_"..flag],{"确定"})
+	else
+		SocketEvent:dispatchEvent({name = CMD.RSP_BUY .. "back"})
+	end
+end
+
+function ParseSocket:shoplist(packet)
+	local list = {}
+	local num = packet:readShort()
+	local item = {}
+	for i=1,num do
+		item = {}
+		item.proid = packet:readString()
+		item.type  = packet:readInt()
+		item.chips = packet:readInt()
+		item.addChips = packet:readInt()
+		item.money = packet:readInt()
+		item.dec   = packet:readString()
+		item.unit = "￥"
+		list[i] = item
+	end
+	SocketEvent:dispatchEvent({name = CMD.RSP_SHOPLIST .. "back",data = list})
+end
+
 function ParseSocket:userEnter(packet)
 	local data = self:readUserBaseInfo(packet)
 	data.uchips = packet:readInt()
 	data.level = packet:readShort()
-	_.Room.model.lookUser[#_.Room.model.lookUser] = data
+	if _.Room and _.Room.model and _.Room.model.lookUser then
+		_.Room.model.lookUser[#_.Room.model.lookUser] = data
+	end
 	-- dump(data)
 end
 
@@ -95,7 +177,13 @@ function ParseSocket:changePic(packet)
 end
 
 function ParseSocket:changeUname(packet)
-
+	local flag = packet:readChar()
+	if flag == 0 then
+		USER.uname = packet:readString()
+	else
+		utils.dialog("", LANG["RSP_CHANGE_UNAME_"..flag],{"确定"})
+	end
+	SocketEvent:dispatchEvent({name = CMD.RSP_CHANGE_UNAME .. "back"})
 end
 
 function ParseSocket:scenesList(packet) 
@@ -117,33 +205,32 @@ end
 
 function ParseSocket:outTableNtf(packet) 
 	local uid = packet:readInt()
-	-- if uid == USER.uid then
- --        _.Hall = Hall.new()
-	-- 	display.replaceScene(_.Hall)
-	-- else
+	if _.Room and _.Room.model and _.Room.model.lookUser then
 		for i,v in ipairs(_.Room.model.lookUser) do
 			if v.uid == uid then
 				table.remove(_.Room.model.lookUser, i)
 				break;
 			end
 		end
-	-- end
+	end
 	SocketEvent:dispatchEvent({name = ROOM_CMD.NTF_OUT_TABLE .. "back",data = uid})
 end
 
 function ParseSocket:outTable(packet) 
 	local flag = packet:readChar()
 	if flag == 0 then
-		_.Event:exit()
+		_.Room:exit(true)
 		_.Hall = Hall.new()
 		display.replaceScene(_.Hall)
-		for i,v in ipairs(_.Room.model.lookUser) do
-			if v.uid == USER.uid then
-				table.remove(_.Room.model.lookUser, i)
-				break;
+		if _.Room and _.Room.model and _.Room.model.lookUser then
+			for i,v in ipairs(_.Room.model.lookUser) do
+				if v.uid == USER.uid then
+					table.remove(_.Room.model.lookUser, i)
+					break;
+				end
 			end
 		end
-		_.Room.exit()
+		
 	else
 		utils.dialog("", LANG["RSP_OUT_TABLE_"..flag],{"确定"})
 	end
@@ -156,17 +243,23 @@ function ParseSocket:finalGame(packet)
 	local players = {}
 	for i=1,playerNum do
 		player = {}
-		player.seatid = packet:readChar()
 		player.uid = packet:readInt()
+		player.seatid = packet:readChar()
 
 		player.win = packet:readInt()
 		player.buying = packet:readInt()
 		player.profit = packet:readInt()
-		player._type = packet:readChar()
-		if player._type > 0 then
-			player.hand_cards = {packet:readChar(),packet:readChar()}
-
-			player.hight_cards = {packet:readChar(),packet:readChar(),packet:readChar(),packet:readChar(),packet:readChar()}
+		player.type = packet:readChar()
+		if player.type > 0 then
+			player.hand_cards ={}
+			player.hand_cards[1] = packet:readChar()
+			player.hand_cards[2] = packet:readChar()
+			player.hight_cards ={}
+			player.hight_cards[1] = packet:readChar()
+			player.hight_cards[2] = packet:readChar()
+			player.hight_cards[3] = packet:readChar()
+			player.hight_cards[4] = packet:readChar()
+			player.hight_cards[5] = packet:readChar()
 		end
 		players[i] = player
 	end
@@ -185,8 +278,9 @@ function ParseSocket:finalRound(packet)
 end
 
 function ParseSocket:river(packet) --最后一轮，河牌
-	local card = self:readCharArrayData()
-	SocketEvent:dispatchEvent(ROOM_CMD.RSP_RIVER .. "back",{data = card})
+	local card = self:readCharArrayData(packet)
+	dump(card)
+	SocketEvent:dispatchEvent({name = ROOM_CMD.RSP_RIVER .. "back",data = card})
 end
 
 -- function ParseSocket:turn(packet) --第二轮，转牌
@@ -202,6 +296,7 @@ end
 
 function ParseSocket:handCard(packet)
 	local card = {packet:readChar(),packet:readChar()}
+	dump(card)
 	SocketEvent:dispatchEvent({name =ROOM_CMD.RSP_HAND_CARDS .. "back",data = card})
 end
 
@@ -281,6 +376,7 @@ end
 
 function ParseSocket:userStandFailure(packet)
 	local flag = packet:readChar()
+	USER.uchips = packet:readInt()
 	if flag <=2 then return end
 	utils.dialog("", LANG["RSP_USER_STAND_"..flag],{"确定"})
 end
@@ -398,7 +494,8 @@ function ParseSocket:startChipinAction(packet)
 		-- room.model.gap_seci 当前房间的操作时间
 		-- data.gap_sec 还剩下的操作时间
 		-- data.gap_sec = data.time - os.time() + CONFIG.clinet_diftime + room.model.gap_sec
-	data.gap_sec = packet:readInt() - CONFIG.clinet_diftime - os.time()
+	data.gap_sec = packet:readInt()
+	data.gap_sec = data.gap_sec - CONFIG.clinet_diftime - os.time()
 	SocketEvent:dispatchEvent({name = ROOM_CMD.NTF_START_ACTION .. "back",data =data})
 end
 
@@ -428,8 +525,8 @@ function ParseSocket:userInfo(packet)
 		local data = self:readUserInfo(packet)
 		data.tid = packet:readInt()
 		data.online = packet:readChar() -- 1 online -- 0 offline
-		if not _.UserInfo then
-			_.UserInfo = UserInfo.new()
+		if _.UserInfo == nil or tolua.isnull(_.UserInfo) then 
+			_.UserInfo = UserInfo.new():addTo(display.getRunningScene(),30)
 		end
 		_.UserInfo:show(data)
 	else
@@ -465,13 +562,14 @@ function ParseSocket:readUserInfo(packet)
 	data.win_count = packet:readInt()
 	data.win_max = packet:readInt() --最大赢注
 	data.win_total = packet:readInt() -- 累积赢得的总筹码数
-	-- data.allin_count = packet:readInt()
-	-- data.allin_win_count = packet:readInt() 
+	
 	-- data.arena_count = packet:readInt() --竞技场的参加次数
 	-- data.arena_win_count = packet:readInt() -- 竞技场的夺冠次数
 
 	data.best_cards = {packet:readChar(),packet:readChar(),packet:readChar(),packet:readChar(),packet:readChar()}
 	-------
+	data.pay_count = packet:readInt()
+	data.top_chips = packet:readInt() 
 	return data
 end
 
@@ -481,7 +579,10 @@ function ParseSocket:loginToGameSuccess(packet)
 		local data = self:readUserInfo(packet)
 		utils.__merge(USER,data)
 		CONFIG.serverTime = packet:readInt()
+		dump(CONFIG.serverTime)
+		dump(os.time())
 		CONFIG.clinet_diftime = CONFIG.serverTime  - os.time()
+		dump(CONFIG.clinet_diftime)
 		-------当前游戏局会话信息 
 		flag = packet:readChar()  --是否读取本字段
 		if flag == 1 then 

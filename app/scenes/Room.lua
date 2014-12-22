@@ -10,11 +10,10 @@ Seat        = require("app.scenes.room.Seat")
 Event        = require("app.scenes.room.Event")
 
 function Room:ctor()
-    if _.Table then return _.Table end
-    self.seat_coords5 = {cc.p(display.cx,238),cc.p(175,377),cc.p(278,722),cc.p(1412,722),cc.p(1529,377)}
-    self.seat_coords9 = {cc.p(display.cx,238),cc.p(500,238),cc.p(175,377),cc.p(278,722),cc.p(583,823),cc.p(1129,823),cc.p(1412,722),cc.p(1529,377),cc.p(1218,238)}
-    self.dealer_coords5 = {cc.p(980,360),cc.p(320,380),cc.p(400,620),cc.p(1290,640),cc.p(1400,400)}
-    self.dealer_coords9 = {cc.p(980,360),cc.p(630,360),cc.p(320,380),cc.p(400,620),cc.p(670,680),cc.p(1020,670),cc.p(1290,640),cc.p(1400,400),cc.p(1350,360)}
+    self.seat_coords5 = {cc.p(display.cx,display.height*0.25),cc.p(175,display.height*0.38),cc.p(278,display.height*0.77),cc.p(1412,display.height*0.77),cc.p(1529,display.height*0.38)}
+    self.seat_coords9 = {cc.p(display.cx,display.height*0.25),cc.p(500,display.height*0.25),cc.p(175,display.height*0.38),cc.p(278,display.height*0.77),cc.p(583,display.height*0.85),cc.p(1129,display.height*0.85),cc.p(1412,display.height*0.77),cc.p(1529,display.height*0.38),cc.p(1218,display.height*0.25)}
+    self.dealer_coords5 = {cc.p(980,display.height*0.375),cc.p(320,display.height*0.395),cc.p(400,display.height*0.65),cc.p(1290,display.height*0.67),cc.p(1400,display.height*0.42)}
+    self.dealer_coords9 = {cc.p(980,display.height*0.375),cc.p(630,display.height*0.375),cc.p(320,display.height*0.395),cc.p(400,display.height*0.65),cc.p(670,display.height*0.71),cc.p(1020,display.height*0.7),cc.p(1290,display.height*0.67),cc.p(1400,display.height*0.42),cc.p(1350,display.height*0.375)}
     self.model ={
         -- max_player = 5,
         lookUser ={},
@@ -23,32 +22,19 @@ function Room:ctor()
     }
     display.addSpriteFrames("img/room.plist","img/room.png")
 	self.parts={}
-    display.newSprite("img/table-bg.png",display.cx,display.cy)
+    local bg = display.newSprite("img/table-bg.png",display.cx,display.cy)
     :addTo(self)
-    display.newSprite("#room/heguan.png",display.cx,display.top - 130)
+    if display.height > 960 then
+        bg:setScale(display.height/960)
+    end
+    display.newSprite("#room/heguan.png",display.cx,display.cy + display.cy * 0.72)
     :addTo(self)
-	_.Event = Event.new()
+	_.Event = Event.new()  
 	self:initPublicCard()
     self:initDealer()
 	self:initRoomMenu()
     self:initAction()
-    self:initChips()
-    -- self:performWithDelay(function()
-        -- self:startDealCard()
-        -- self.parts["public_cards"]:showCard(1,5,{1029,1029,1029,1029,1029})
-        -- self.parts["seats"][1]:changeChipin(999)
-        -- self.parts["pot"]:moveToSeat(self.parts["seats"][1],10,999)
-    -- self:chipin(self.parts["seats"][1])
-    --     end, 1)
-    -- cc.ui.UILabel.new({
-    --     UILabelType = 2,
-    --     text = "你：$12312",
-    --     size = 30,
-    --     -- textAlign = cc.ui.TEXT_ALIGN_CENTER
-    --     })
-    --     :align(display.CENTER, display.cx, 34)
-    --     :addTo(self)
-    -- self:initSeats()
+    utils.stopMusic()
 end
 
 function Room:initRoomWithData(data)
@@ -64,41 +50,42 @@ function Room:initRoomWithData(data)
             :align(display.CENTER,240,display.top - 81)
             :addTo(self)
     self:initPot(data)
+    self:initChips()
     self:initSeats()
     self:setDealer(data.dealer)
+    local seat
     for id,u in pairs(data.users) do
+        seat = self.parts["seats"][u.seatid]
         if u.uid == USER.uid then
             self.model._resetSeats = true
             u._quickResetPos = true
+            self.parts["action"].seat = seat
+            seat:resetSeats(seat.model.id,true)
         end
-        self.parts["seats"][u.seatid]:changeUser(u)
+        seat:changeUser(u)
     end
     if #data.public_cards > 0 then
         self.parts["public_cards"]:showCard(1,#data.public_cards,data.public_cards)
     end
-    if data.currPlayer and data.currPlayer.uid ==  USER.uid then
+    if data.currPlayer then
         self:performWithDelay(function ( )
-            data.currPlayer.gap_sec = data.currPlayer.gap_sec -1
-            if data.currPlayer.gap_sec > 0 then
+            if data.currPlayer.uid ==  USER.uid then
                 self.parts["action"]:startChipin(data.currPlayer,self.parts["seats"][data.currPlayer.seatid])
+            else
+                self.parts["seats"][data.currPlayer.seatid]:startChipin(data.currPlayer)
             end
-        end, 1)
+        end, 0.5)
     end
     self.load = true
-
-    dump("room load ok ...................................")
-    dump("room load ok ...................................")
-    dump("room load ok ...................................")
-    dump("room load ok ...................................")
     _.Event:init(self)
 end
 
 function Room:initChips()
     local batchNode = Chip:getBatchNode()
-    self:addChild(batchNode,13)
+    self:addChild(batchNode,50)
     self.parts["batch-chips"] =  batchNode
     self.parts["chips"] ={}
-    for i= 1, 5 do
+    for i= 1, self.model.max_player * 5 do
         local coin = CONFIG.coinList[math.random(1,10)]
         -- local c = Chip:create(coin,1, seat.x , seat.y, batchNode)
         local c = Chip.new(nil,math.random(1,4),0,0,batchNode)
@@ -159,29 +146,34 @@ end
 
 function Room:initPot()
     local pot = Pot.new(self.model)
-    pot:setPosition(display.cx,display.top - 316)
-    self:addChild(pot,20)
+    pot:setPosition(display.cx,display.height * 0.68)
+    self:addChild(pot)
     self.parts["pot"] = pot
     -- pot:changeVal()
 end
 
 function Room:moveToPot()
-    local pot = cc.p(seat.parts["pot"]:getPositionX(),seat.parts["pot"]:getPositionY())
-    local chips = seat.parts["chips"]
-    local t = 0.2
-    for i,seat in ipairs(seats) do
-        seat:changeChipin(0)
-        local pos = seat.parts["chipin"]:convertToWorldSpace(cc.p(0,0))
-              pos = self.mainlayer:convertToNodeSpace(pos)
-        for i=1, n do
-            local c = chips[i]
-            c:setOpacity(200)
-            c:setPosition(pos.x,pos.y)
-            local delay = CCDelayTime:create(i*0.05)
-            local a1 = transition.newEasing(CCMoveTo:create(t,ccp(pot.x,pot.y)),"OUT")
-            local a2 = transition.newEasing(CCFadeTo:create(t*1.5,0),"OUT")
-            local action = transition.sequence({delay,transition.spawn({a1,a2})})
-            c:runAction(action)
+    utils.playSound("move_chips")
+    local pot = cc.p(self.parts["pot"]:getPositionX(),self.parts["pot"]:getPositionY())
+    local chips = self.parts["chips"]
+    local t,pos,start,c,delay,a1a2,action = 0.3
+
+    for k,seat in ipairs(self.parts["seats"]) do
+        if checkint(seat.model.chipin) > 0 then
+            seat:changeChipin(0)
+            pos = seat.parts["chipin"]:convertToWorldSpace(cc.p(0,0))
+            pos = self:convertToNodeSpace(pos)
+            start = (seat.model.pos_id - 1) * 5  + 1
+            for i = start, start + 4 do
+                c = chips[i]
+                c:setOpacity(200)
+                c:setPosition(pos.x,pos.y)
+                delay = cc.DelayTime:create(( i- start + 1 ) * 0.05 )
+                a1 = transition.newEasing(cc.MoveTo:create(t,pot),"OUT")
+                a2 = transition.newEasing(cc.FadeTo:create(t*1.5,0),"OUT")
+                action = transition.sequence({delay,cc.Spawn:create({a1,a2})})
+                c:runAction(action)
+            end
         end
     end
 end
@@ -191,7 +183,6 @@ function Room:initPublicCard()
 	publiCard:setPosition(588,display.cy+40)
 	self:addChild(publiCard,19)
     self.parts["public_cards"] = publiCard
-    -- publiCard:moveCard(1,5,{1029,1029,1029,1029,1029})
 end
 
 function Room:initRoomMenu()
@@ -202,11 +193,12 @@ end
 
 function Room:initSeats()
     local max = self.model["max_player"]
+    self.parts["seats"]= {}
     -- local second = self.model["gap_sec"]
     local seats = {}
     local pos_ids = table.slice({1,2,3,4,5,6,7,8,9},1,max)
     for i=1, #pos_ids, 1 do
-        local seat = Seat.new(i,max)
+        local seat = Seat.new(i,max,self.model.gap_sec)
         local coord = self["seat_coords"..max][i]
         seat:setPosition(coord.x,coord.y)
         seats[i] = seat
@@ -219,16 +211,18 @@ end
 
 function Room:onSeatTap(seat)
 	return function (event)
-	-- printf("sprite: %s x,y: %0.2f, %0.2f",
-           -- event.name, event.x, event.y)
+
         if event.name == "began" then
+            utils.playSound("click")
             return true
 		elseif event.name == "ended" then
 		    if checkint(seat.model.uid) > 0 then
+
 		        -- 显示用户信息
-		        Room.parts["profile_layer"]:show(table.clone(seat.model))
+                SendCMD:getUserInfo(seat.model.uid)
 		        return
 		    else
+                if checkint(USER.seatid) > 0 then return end
 		        --发送socket
                 SendCMD:userSit(seat.model.id,self.model.min_buying,1)
                 -- self:resetSeats(seat.model.id)
@@ -262,8 +256,9 @@ function Room:resetSeats(base_id, quick)
                 easing = "BACKOUT",
             })
             seat:changePos(pos)
-            seat:changeSitStatus(1)
-
+            -- if seat.model.uid == 0 then
+                seat:changeSitStatus(1)
+            -- end
         end
     end
     moveEnd()
@@ -339,8 +334,7 @@ function Room:startDealCard(roomdata,cards)
                 local seatid = data[j]
                 local to_seat = self.parts["seats"][seatid]
                 local card = display.newSprite("#cover-small.png")
-                if j == 1 then
-                -- if to_seat.model.uid ==  USER.uid then
+                if to_seat.model.uid ==  USER.uid then
                     card = display.newSprite("#cover.png")
                 end
                 batch:addChild(card)
@@ -361,13 +355,12 @@ function Room:startDealCard(roomdata,cards)
                 end
                 local convert_sp = small_cards["card"..cardcheckintum]
                 local c_p_end = convert_sp:convertToWorldSpace(conver_end_point)
-                if j == 1 then
-                -- if to_seat.model.uid == USER.user.uid then
+                if to_seat.model.uid == USER.uid then
                     if cardcheckintum == 1 then
-                        c_p_end = cc.p(to_seat:getPositionX() + 110 ,to_seat:getPositionY()-94)
+                        c_p_end = cc.p(to_seat:getPositionX() + 78 ,to_seat:getPositionY()-96)
                         card_round_rotation = 184
                     else
-                        c_p_end = cc.p(to_seat:getPositionX() + 140 ,to_seat:getPositionY()-94)
+                        c_p_end = cc.p(to_seat:getPositionX() + 108 ,to_seat:getPositionY()-96)
                         card_round_rotation = 174
                     end
                     
@@ -379,21 +372,20 @@ function Room:startDealCard(roomdata,cards)
                 local action = cc.MoveTo:create(time,end_point)
                 local a11 = cc.EaseSineOut:create(action)
                 local action1 = cc.Spawn:create({a21,a11})
-                if j == 1 then
-                -- if to_seat.model.uid ==  USER.uid then
+                if to_seat.model.uid ==  USER.uid then
                     card:setScale(0.3)
                     transition.scaleTo(card,{time = time,scale = 0.8})
                 end
                 transition.execute(card,action1,{onComplete = function ( )
-                    -- if to_seat.model.uid ~=  USER.uid then
+                    if to_seat.model.uid ~=  USER.uid then
                         card:removeSelf(true)
-                        -- small_cards["card"..cardcheckintum]:setVisible(true)
-                        -- else
+                        small_cards["card"..cardcheckintum]:setVisible(true)
+                        else
                             self.parts["action"].parts["hand_cards"]["card"..cardcheckintum]:setVisible(true)
-                    -- end
+                    end
                     if j == #data and cardcheckintum == 2 then
                         self:performWithDelay(function()
-                            -- batch:removeSelf(true)
+                            batch:removeSelf(true)
                             if cards then
                                 self.parts["action"]:changeCard(cards)
                                 self:showCardLine()
@@ -433,14 +425,14 @@ function Room:showCardLine()
         local all_cards = self:hideCardLine()
         
         local allcard_vals = {}
-        for i,c in ipairs(allcards) do
+        for i,c in ipairs(all_cards) do
             if c.value > 0 then
                 table.insert(allcard_vals,c.value)
             end
         end
         local cardtype,highcards = Card.getCardType(allcard_vals)
-        if cardtype > 2 then
-            for i, c in ipairs(allcards) do
+        if cardtype >= 2 then
+            for i, c in ipairs(all_cards) do
                 if table.indexOf(highcards,c.value) then
                     c:showline()
                 end
@@ -462,10 +454,14 @@ function Room:hideCardLine()
     return all_cards
 end
 
-function Room:exit()
-    -- _.Event:exit()
-    display.removeSpriteFrameByImageName("img/table-bg.png")
-    display.removeSpriteFramesWithFile("img/room.plist","img/room.png")
+function Room:exit(removeImage)
+    USER.tid = 0
+    USER.seatid = 0
+    _.Event:exit()
+    if removeImage then
+        display.removeSpriteFrameByImageName("img/table-bg.png")
+        display.removeSpriteFramesWithFile("img/room.plist","img/room.png")
+    end
     _.Room = nil
 end
 

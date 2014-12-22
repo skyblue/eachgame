@@ -5,8 +5,11 @@ end)
 function SelectRoom:ctor()
 	display.addSpriteFrames("img/selectroom.plist","img/selectroom.png")
 	self.parts={}
-    display.newSprite("img/select-room-bg.png",display.cx,display.cy)
+    local bg = display.newSprite("img/select-room-bg.png",display.cx,display.cy)
     :addTo(self)
+    if display.height > 960 then
+        bg:setScale(display.height/960)
+    end
     SocketEvent:addEventListener(CMD.RSP_IN_TABLE .. "back", function(event)
         dump(event.data)
         _.Room = Room.new()
@@ -31,14 +34,15 @@ function SelectRoom:ctor()
                     -- sprite:runAction(cc.TintBy:create(0,255,255,255))
             end)
             :onButtonClicked(function (event)
-                    self:exit()
-                    _.Hall = Hall.new()
-                    display.replaceScene(_.Hall)
+                utils.playSound("click")
+                self:exit()
+                _.Hall = Hall.new()
+                display.replaceScene(_.Hall)
             end)
             :addTo(self)   
 
     self.list = cc.ui.UIListView.new {
-                viewRect = cc.rect(0,130, display.width, 700),
+                viewRect = cc.rect(0,130, display.width, 710),
                 direction = cc.ui.UIScrollView.DIRECTION_HORIZONTAL,
             }
             :onTouch(handler(self, self.touchListener))
@@ -78,19 +82,19 @@ function SelectRoom:ctor()
             :addTo(content)
         cc.ui.UILabel.new({
             UILabelType = 2,
-            text = "盲注：" .. v.min_b .."——"..v.max_b,
+            text = "盲注：" .. utils.numAbbr(v.min_b) .."—"..utils.numAbbr(v.max_b),
             size = 30})
             :align(display.LEFT_CENTER,180,60)
             :addTo(content)
         cc.ui.UILabel.new({
             UILabelType = 2,
-            text = "带入筹码："..v.min_buying.."——"..v.max_buying,
+            text = "筹码要求："..utils.numAbbr(v.min_buying).."—"..utils.numAbbr(v.max_buying),
             size = 30})
             :align(display.LEFT_CENTER,180,0)
             :addTo(content)
 
         item:addContent(content)
-        item:setItemSize(530,content:getContentSize().height)
+        item:setItemSize(566,content:getContentSize().height)
         self.list:addItem(item)
     end
     self.list:reload()
@@ -98,17 +102,18 @@ end
 
 function SelectRoom:touchListener(event)
     local yy = 0
+
     if event.name == "began" then
         yy = event.y
     elseif event.name == "moved" then
 
     elseif event.name == "ended"  then
         if math.abs(event.y - yy) < 10 then
-            --被点击了，关闭聊天窗口
+            utils.playSound("click")
             SendCMD:toGame(0,event.itemPos)
         end
     elseif event.name == "clicked" then
-        --被点击了，关闭聊天窗口
+        utils.playSound("click")
         SendCMD:toGame(0,event.itemPos)
     end
 end

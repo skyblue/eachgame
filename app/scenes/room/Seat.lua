@@ -1,7 +1,7 @@
 local Seat = class("Seat",display.newNode)
 local Clock = require("app.scenes.room.Clock")
 
-function Seat:ctor(id,maxPlayer)
+function Seat:ctor(id,maxPlayer,gap_sec)
     self.chipinPos5 = {cc.p(0,170),cc.p(140,90),cc.p(-20,-170),cc.p(-100,-150),cc.p(-130,140)}
     self.chipinPos9 = {cc.p(0,170),cc.p(0,170),cc.p(140,90),cc.p(-20,-170),cc.p(-20,-170),cc.p(-20,-170),cc.p(-100,-150),cc.p(-130,140),cc.p(0,170)}
 	self.chipinPos = self["chipinPos"..maxPlayer]
@@ -39,7 +39,7 @@ function Seat:ctor(id,maxPlayer)
     self.parts["chipin"] = chipin
     chipin:setVisible(false)
 
-	self:initHead()
+	self:initHead(gap_sec)
 	local sit = cc.ui.UILabel.new({
 		UILabelType = 2,
 		text = "坐下",
@@ -49,8 +49,8 @@ function Seat:ctor(id,maxPlayer)
 		:align(display.CENTER,0,60)
 		:addTo(self,5)
 	self.parts["sit"] = sit
-    self.parts['sit_arr'] = display.newSprite("#room/sit-arr.png",38,-60)
-    self.parts["sit"]:addChild(self.parts['sit_arr'])
+    self.parts['sit_arr'] = display.newSprite("#room/sit-arr.png",0,-30)
+        :addTo(self,4)
 
 	local uname = cc.ui.UILabel.new({
 		UILabelType = 2,
@@ -86,12 +86,10 @@ function Seat:ctor(id,maxPlayer)
 
 end
 
-function Seat:initHead( )
-    -- local head = utils.makeAvatar({upic = "img/1px.png"})
+function Seat:initHead( gap_sec)
     local head = utils.makeAvatar()
     head:setVisible(false)
-    -- head.pic:setSpriteFrame(cc.SpriteFrameCache:getInstance():getSpriteFrame("room/null.png"))
-    local clock = Clock.new()
+    local clock = Clock.new(gap_sec)
     clock:setPosition(head._size.width/2, head._size.height/2-1)
     head:addChild(clock, 10)
     -- clock:start()
@@ -124,11 +122,9 @@ function Seat:changePic(pic_path)
     --     -- self.parts["head"].pic:setSpriteFrame(frame)
     --     return
     -- end
-    dump(pic_path)
 	utils:loadRemote(self.parts["head"].pic,pic_path, function(succ, texture, sprite)
-        dump(succ)
         if not succ then return end
-            scheduler.setTimeout(function()
+            scheduler.performWithDelayGlobal(function()
                 if not sprite or tolua.isnull(sprite) then return end
                 local opacity = sprite:getOpacity()
                 opacity = opacity or 255
@@ -140,12 +136,13 @@ function Seat:changePic(pic_path)
                     time = 0.2,
                     opacity = opacity
                 })
-        end, 0.5, sprite)
+        end, 0.5)
     end)
 end
 
 function Seat:initHandCard()
 	local hand_cards = display.newNode()
+    hand_cards:setScale(0.8)
     hand_cards.card1 = Card.new(0)
     hand_cards.card2 = Card.new(0)
     hand_cards:addChild(hand_cards.card1)
@@ -179,8 +176,6 @@ end
 
 function Seat:moveCard(seatid)
     local time = 0.05
-    local old_x = self.parts["small_cards"]._x
-    local old_y = self.parts["small_cards"]._y
     transition.scaleTo(self.parts["small_cards"],{
         time = time,
         scale=2,
@@ -197,7 +192,7 @@ function Seat:moveCard(seatid)
         onComplete = function ()
             self.parts["small_cards"]["card1"]:setVisible(false)
             self.parts["small_cards"]["card2"]:setVisible(false)
-            self.parts["small_cards"]:setPosition(old_x,old_y)
+            self.parts["small_cards"]:setPosition(80,-20)
         end
     })
 end
@@ -213,7 +208,7 @@ function Seat:changeBuying(val,anim,time)
         return
     end
     if val < 0 then  val = 0 end
-    -- buying:setVisible(true)
+    buying:setVisible(true)
     local digit = val> 1e8 and 0 or 1
     buying:setString(utils.numAbbr(val,digit))
     self.model.buying = val
@@ -244,7 +239,10 @@ function Seat:changeStatus(status)
         end
     end
     if status == 0 or status == 10 or self.model._pre_status == 10 then
-        self.parts["uname"]:setString(utils.suffixStr(self.model.uname,5))
+        if self.model.uid then
+            -- self.parts["uname"]:setString(utils.suffixStr(self.model.uid.."",5))
+            self.parts["uname"]:setString(utils.suffixStr(self.model.uname,5))
+        end
     end
     if status > 0  and status < 6 or status == 8 then
        self.parts["uname"]:setString(CONFIG.status[status])
@@ -254,35 +252,34 @@ function Seat:changeStatus(status)
 end
 
 function Seat:otherFlod()
-    local card1 = self.parts["small_cards"].card1
-    local card2 = self.parts["small_cards"].card2
-    local ccp1 = card1:convertToNodeSpace(cc.p(display.cx,display.height+150))
-    if self.model.seatid > 3 then
-        ccp1.x = ccp1.x - 50
-    end
-    local ccp2 = ccp1
-    local distance = utils.distancePoints(ccp1,cc.p(0,0))
-    local t = distance /1500
-    local a11 = cc.MoveTo:create(t,cc.p(ccp1.x,ccp1.y))
-    local a12 = cc.RotateTo:create(t,-200)
-    local card1_action = cc.Spawn:create({a11,a12})
-    card1:runAction(card1_action)
+    self:setOpacity(100)
 
-    local a21 = cc.DelayTime:create(0.05)
-    local a22 = cc.MoveTo:create(t,cc.p(ccp2.x,ccp2.y))
-    local a23 = cc.RotateTo:create(t,120)
-    local card2_action = transition.sequence({a21,cc.Spawn:create({a22,a23})})
-    card2:runAction(card2_action)
-    self:performWithDelay(function ( ... )
-        transition.stopTarget(card2)
-        transition.stopTarget(card1)
-        card1:setVisible(false)
-        card1:setPosition(card1._x,card1._y)
-        card1:setRotation(8)
-        card2:setVisible(false)
-        card2:setPosition(card2._x,card2._y)
-        card2:setRotation(22)
-    end,1)
+    -- local card1 = self.parts["small_cards"].card1
+    -- local card2 = self.parts["small_cards"].card2
+    -- local ccp1 = card1:convertToNodeSpace(cc.p(display.cx,display.height+150))
+    -- local ccp2 = ccp1
+    -- local distance = utils.distancePoints(ccp1,cc.p(0,0))
+    -- local t = distance /1500
+    -- local a11 = cc.MoveTo:create(t,cc.p(ccp1.x,ccp1.y))
+    -- local a12 = cc.RotateTo:create(t,-200)
+    -- local card1_action = cc.Spawn:create({a11,a12})
+    -- card1:runAction(card1_action)
+
+    -- local a21 = cc.DelayTime:create(0.05)
+    -- local a22 = cc.MoveTo:create(t,cc.p(ccp2.x,ccp2.y))
+    -- local a23 = cc.RotateTo:create(t,120)
+    -- local card2_action = transition.sequence({a21,cc.Spawn:create({a22,a23})})
+    -- card2:runAction(card2_action)
+    -- self:performWithDelay(function ( ... )
+    --     transition.stopTarget(card2)
+    --     transition.stopTarget(card1)
+    --     card1:setVisible(false)
+    --     card1:setPosition(card1._x,card1._y)
+    --     card1:setRotation(8)
+    --     card2:setVisible(false)
+    --     card2:setPosition(card2._x,card2._y)
+    --     card2:setRotation(22)
+    -- end,1)
 
 end
 
@@ -295,6 +292,7 @@ function Seat:changeName(name)
 end
 
 function Seat:emptySit()
+    self:hideWin()
     self.model.uid = nil
     self:stopChipin()
     self:changeStatus(0)
@@ -304,13 +302,19 @@ function Seat:emptySit()
     if self.parts["head"] then
         self.parts["head"]:setVisible(false)
     end
-    self.parts["sit"]:setVisible(true)
+    if checkint(USER.seatid) > 0 then
+        self:changeSitStatus(1)
+    else
+        self.parts["sit"]._open = true
+        self:changeSitStatus(0)
+    end
     if self.model.uid == USER.uid then
         self:changeCard(0)
     end
     self:setCardsVisible(false)  --清空座位隐藏牌
     if self.parts["clock"] then
-        self.parts["clock"]:setCardsVisible(false)
+        self.parts["clock"]:setVisible(false)
+        self.parts["clock"]:stop()
     end
 end
 
@@ -318,12 +322,14 @@ function Seat:changeCard(vals)
     local hand_cards = self.parts["hand_cards"]
     local card1 , card2 = hand_cards.card1,hand_cards.card2
     if type(vals) ~= "table"  or not checkint(vals[1]) or not checkint(vals[2])  then
-        self:setCardsVisible(false)
-        card1:changeVal(0)
-        card2:changeVal(0)
+        -- self:setCardsVisible(false)
+        -- card1:changeVal(0)
+        -- card2:changeVal(0)
+        hand_cards:setVisible(false)
         self.model.cards = nil
     else
-        self:setCardsVisible(true)
+        -- self:setCardsVisible(true)
+        hand_cards:setVisible(true)
         card1:changeVal(vals[1])
         card2:changeVal(vals[2])
         self.model.cards = vals
@@ -345,6 +351,8 @@ function Seat:changePos(pos_id,isself)
 
     local _size = cc.size(192, 192)
     chipin:setPosition(self.chipinPos[pos_id])
+    chipin.label:setPositionY(self.chipinPos[pos_id].y)
+    chipin.label:setPositionX(self.chipinPos[pos_id].x + 30)
     if table.indexOf({4,5},pos_id) then
     	small_cards:setPositionX(-80)
     	small_cards:setRotation(-30)
@@ -358,21 +366,26 @@ function Seat:changePos(pos_id,isself)
     end
 end
 
-function Seat:showWin( )
-    self.parts["win"]:setVisible(true)
+function Seat:showWin(_type,win)
+    self.parts["anim_win"]:setVisible(true)
+    if _type == 0 then
+        self.parts["win"]:setVisible(true)
+    end
+    self.parts["uname"]:setString(CONFIG.cardtypes[_type])
     self.parts["anim_win"]:playAnimationForever(display.getAnimationCache("anim_win"))
     
 end
 
 function Seat:hideWin( )
     self.parts["win"]:setVisible(false)
-    -- self.parts["anim_win"]:setVisible(false)
+    self.parts["anim_win"]:setVisible(false)
     self.parts["anim_win"]:stopAllActions()
 end
 
 function Seat:changeSitStatus(status) -- 0 坐下 1 空位 3 清空
     local sit = self.parts["sit"]
     if status == 0 and sit._open then
+        if checkint(self.model.uid) > 0 then return end
         sit:setString("坐下")
         self.parts['sit_arr']:setVisible(true)
         sit._open = false
@@ -381,7 +394,8 @@ function Seat:changeSitStatus(status) -- 0 坐下 1 空位 3 清空
             time = 0.3
         })
     elseif status == 1 and not sit._open then
-        -- self.parts['sit_arr']:setVisible(false)
+        if checkint(self.model.uid) > 0 then return end
+        self.parts['sit_arr']:setVisible(true)
         self:setOpacity(150)
         sit:setString("空位")
         sit._open = true
@@ -396,14 +410,14 @@ function Seat:changeSitStatus(status) -- 0 坐下 1 空位 3 清空
 end
 
 function Seat:changeUser(udata)
-    dump(udata)
     if not (udata and udata.uid and udata.buying) then
         self:emptySit()
         return false
     end
     self.parts["head"]:setVisible(true)
     self:setVisible(true)
-    self:changeName(udata.uname)
+    -- self:changeName(udata.uname)
+    self:changeName(udata.uid .."")
     table.merge(self.model,udata)
     if USER.uid ~= udata.uid then
         if udata.status == nil or table.indexOf({0,1,10}, udata.status) then --如果有牌，玩家坐下
@@ -421,11 +435,7 @@ function Seat:changeUser(udata)
 end
 
 function Seat:startChipin(data)
-    -- dump(self.parts)
-    dump(111)
-    dump(self.model)
     if self.parts["clock"] then
-        dump(222)
         -- self.parts["clock"]:setCardsVisible(true)
         self.parts["clock"]:start(data.gap_sec)
     end
@@ -433,7 +443,7 @@ end
 
 function Seat:stopChipin()
     if self.parts["clock"] then
-        -- self.parts["clock"]:setCardsVisible(false)
+        self.parts["clock"]:setVisible(false)
         self.parts["clock"]:stop()
     end
 end

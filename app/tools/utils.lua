@@ -158,21 +158,23 @@ function utils.formatNumber(num)
 end
 
 local checktableid_gap
-function utils.playSound(title,isloop,suffix)
+function utils.playSound(filename,isloop,suffix)
     if not utils.getUserSetting("sound_enabled",true) then return end
-    local filename = CONFIG.soundList[title]
     if filename == nil then return end
-    if device.platform ~= "android" then
-        if not suffix then
-            filename = filename..".mp3"
-        else
-            filename = filename .. suffix
-        end
-        return audio.playSound("res/mp3/"..filename,isloop)
-    else
-        filename = filename..".ogg"
-        return audio.playSound("res/ogg/"..filename,isloop)
-    end
+    -- if device.platform ~= "android" then
+    --     if not suffix then
+    --         filename = filename..".mp3"
+    --     else
+    --         filename = filename .. suffix
+    --     end
+    --     return audio.playSound("res/mp3/"..filename,isloop)
+    -- else
+    --     filename = filename..".ogg"
+    --     return audio.playSound("res/ogg/"..filename,isloop)
+    -- end
+
+    filename = filename..".mp3"
+    return audio.playSound("res/mp3/"..filename,isloop)
 end
 
 function utils.stopSound(playSoundBack)
@@ -183,22 +185,22 @@ end
 
 
 local _curr_music = nil
-function utils.playMusic(title,isloop,time)
-    if CONFIG.palyMusic == true then  return end
+function utils.playMusic(filename,isloop,time)
+    -- if CONFIG.palyMusic == true then  return end
     if _curr_music then
         audio.resumeMusic()
         return
     end
-    local filename = CONFIG.soundList[title]
     if filename == nil then return end
-    if device.platform ~= "android" then
-        filename = "res/mp3/"..filename..".mp3";
-    else
-        filename = "res/ogg/"..filename..".ogg";
-    end
-    audio.setMusicVolume(1);
-    audio.playMusic(filename,isloop)
-    _curr_music = title
+    -- if device.platform ~= "android" then
+    --     filename = "res/mp3/"..filename..".mp3";
+    -- else
+    --     filename = "res/ogg/"..filename..".ogg";
+    -- end
+    filename = filename..".mp3"
+    audio.setMusicVolume(1)
+    audio.playMusic("res/mp3/"..filename,isloop)
+    _curr_music = filename
 end
 
 function utils.stopMusic()
@@ -302,7 +304,6 @@ function utils.http(url,params,cb,method,silent,retryTimes)
             cb(data,request:getResponseStatusCode())
         elseif event.name == "progress"  then
             if params.progress then
-                dump(params.progress)
                 cb(event)
             end
         else 
@@ -518,7 +519,6 @@ local _setting_file , _setting_cache = device.writablePath .. "user_setting",nil
 local _sign_key = "zengcheng"
 
 local function _getAllSetting(  )
-    -- _setting_cache = _setting_cache or totable(json.decode(io.readfile(_setting_file)))
     if not _setting_cache  then
         local str = io.readfile(_setting_file) or ""
         if string.byte(str) ~= 123 then
@@ -558,31 +558,36 @@ end
 
 -- 暂时不知道要放哪里的方法....
 -- 生成圆形头像的方法
-function utils.makeAvatar(udata, size, dia, callback, mask1)
-    udata           = checktable(udata)
+function utils.makeAvatar(data)
+    data = data or {}
+    udata           = checktable(data.udata)
     udata.upic      = udata.upic or ""
-    size            = size or cc.size(156, 132)
-    dia             = dia or size.width
-
+    size            = data.size or cc.size(156, 132)
+    callback        = data.callback
+    mask_choose     = data.mask_choose or 0
+    border          = data.border or false
+    -- udata.upic="http://tp3.sinaimg.cn/1784125122/180/5597936572/0"
+    -- udata.upic= "http://picture.youth.cn/qtdb/201412/W020141218231775592472.jpg"
+    -- udata.upic="http://upic.yiihua.com/0000/1001.jpg"
+    -- udata.upic = "http://img1.touxiang.cn/uploads/20120509/09-014358_953.jpg"
+    -- udata.upic = "http://d.lanrentuku.com/down/png/1406/little_animal_64x64/little_animal_25.png"
+    -- udata.upic = "http://d.lanrentuku.com/down/png/1406/kulouwenhua.jpg"
     local head  = display.newNode()
     head._size  = size
     head:setContentSize(size)
     head:align(display.CENTER)
-
-    -- local border = display.newSprite("#common/head-border.png", size.width/2, size.height/2)
-    -- head:addChild(border,10);
-    local pic
-    if udata.upic == "img/1px.png" then
-        pic = display.newSprite(udata.upic)
-    else
-        local def_pic = udata.usex == 0 and "img/f.png" or "img/m.png"
-        pic = display.newSprite(def_pic)
+    if border then
+        head.border = display.newSprite(border, size.width/2, size.height/2)
+        :addTo(head,10)
     end
-    local maskPic = "img/head-mask.png"
-    if mask1 == 1 then
-        maskPic = "img/head-mask1.png"
-    elseif mask1 == 2 then
-        maskPic = "img/head-mask-circle.png"
+    local pic,def_pic
+    def_pic = udata.usex == 0 and "img/f.png" or "img/m.png"
+    pic = display.newSprite(def_pic)
+    local maskPic = "#common/head-mask.png"
+    if mask_choose == 1 then
+        maskPic = "#common/head-mask1.png"
+    elseif mask_choose == 2 then
+        maskPic = "#common/head-mask-circle.png"
     end
     local mask    = display.newSprite(maskPic);
     local avatar  = cc.ClippingNode:create(mask)
@@ -591,11 +596,13 @@ function utils.makeAvatar(udata, size, dia, callback, mask1)
     avatar:addChild(pic)
     head:addChild(avatar)
     head.pic = pic
-    avatar.pic = pic
+    -- avatar.pic = pic
     head.avatar = avatar
     head.border = border
-    -- pic:setScale(dia/size.width)
-    mask:setScale(dia/mask:getContentSize().width)
+    if pic:getContentSize().width < size.width then
+        pic:setScale(size.width/pic:getContentSize().width)
+    end
+    mask:setScale(size.width/mask:getContentSize().width)
     if def_pic ~= udata.upic then
         utils:loadRemote(pic,udata.upic, callback)
     end
@@ -626,7 +633,7 @@ function utils:loadRemote(sprite,url, callback)
     sprite.__key = _key
     local texture = shareCache:getTextureForKey(_key)
 
-    if texture  and not tolua.isnull(texture)  and tolua.type(texture) == "CCTexture2D" then
+    if texture  and not tolua.isnull(texture)  and tolua.type(texture) == "cc.Texture2D" then
         if type(callback) == "function" then
             callback(true, texture, sprite, true)
         else
@@ -635,25 +642,24 @@ function utils:loadRemote(sprite,url, callback)
         end
         return sprite
     end
-
     callback = callback or function(succ,texture,sprite,isCache)
         if not succ then return end
         -- 这两句判断可以去掉,暂时保留
-        if tolua.type(texture) ~= "CCTexture2D" then return end
-        if not sprite or tolua.isnull(sprite)  or tolua.type(sprite) ~= "CCSprite"  then return end
+        if tolua.type(texture) ~= "cc.Texture2D" then return end
+        if not sprite or tolua.isnull(sprite)  or tolua.type(sprite) ~= "cc.Sprite"  then return end
         sprite:setTexture(texture)
         transition.fadeIn(sprite,{time = .2})
     end
     utils.loadImage(url,function(succ, ccimage, isCache)
         if succ then
             local texture
-            if tolua.type(ccimage) == "CCImage" then
+            if tolua.type(ccimage) == "cc.Image" then
                 texture = shareCache:addUIImage(ccimage,_key)
                 ccimage = nil
             elseif type(ccimage) == "string"  and ccimage ~= "" then
                 texture = shareCache:addImage(ccimage)
             end
-            if tolua.type(texture) == "CCTexture2D" and tolua.type(sprite) == "CCSprite"  then
+            if tolua.type(texture) == "cc.Texture2D" and tolua.type(sprite) == "cc.Sprite"  then
                 return callback(true, texture, sprite, false)
             end
         end
@@ -673,7 +679,7 @@ function utils.loadImage(url,cb)
         --     flush = true
         -- end
         local key = crypto.md5(url)
-        local save_path = device.writablePath.."/networkcache/" .. key
+        local save_path = device.writablePath.."/" .. key
         -- if not flush and io.exists(save_path) and io.filesize(save_path) > 100 then
         if io.exists(save_path) and io.filesize(save_path) > 100 then
             return cb(true, save_path, true)
@@ -687,11 +693,10 @@ function utils.loadImage(url,cb)
                 statusCode = request:getResponseStatusCode()
             end
             if ok and errCode == 0 and statusCode == 200 then
-                -- request:saveResponseData(save_path)
+                request:saveResponseData(save_path)
                 print(string.format("load %s success! >>> statusCode:%d,errorCode:%d",url,statusCode,errCode))
                 return cb(true, save_path, false)
             elseif event.name == "progress" then
-                
             else
                 print(string.format("load %s fail! >>> statusCode:%d,errorCode:%d",url,statusCode,errCode))
                 return cb(false, save_path, false) 
@@ -789,14 +794,20 @@ end
 function device.getDeviceID()
     local ok, r 
     if device.platform == "ios" then
-        ok, r = luaoc.callStaticMethod("Helper","getIDFA")
-    else
+        ok, r = luaoc.callStaticMethod("Helper","getOpenUDID")
+    elseif device.platform == "android" then
         ok, r = luaj.callStaticMethod("Helper","getDeviceID")
+    else
+        device.deviceID = utils.getUserSetting("device_deviceID",false)
+        if not device.deviceID  then
+            device.deviceID = os.date("%Y-%M-%d-%X")..math.random(1-99999999)
+        end
+        utils.setUserSetting("device_deviceID",device.deviceID)
+        return device.deviceID
     end
     return r
 end
-device.deviceID = "test_deviceid_".. math.random(2,13)
--- device.deviceId = device.getDeviceID()
+device.deviceID = device.getDeviceID()
 
 function device.vibrate(t)
     if device.platform == "ios" then

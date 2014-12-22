@@ -85,7 +85,6 @@ function Register:ctor()
 	            		local params = {user_name = string.trim(self.parts["acc"]:getText()),send_type = 1}
 	            		params.sign = utils.genSig(params)
 	                   utils.http(CONFIG.EachGame_URL .. "user/sendverifycode",params,function ( data )
-	                   	dump(data)
 	                   end,"POST")
 	            end)
 	            :addTo(self)
@@ -182,7 +181,6 @@ function Register:ctor()
 			                    platform = device.platform == "ios" and 1 or 2,game_id = CONFIG.gameId}
 			            		params.sign = utils.genSig(params)
 		                utils.http(CONFIG.EachGame_URL .. "user/register",params,function ( data )
-		                	dump(data)
 		                	if data.s == 0 then
 		                		utils.dialog("", "注册成功！",{"确定"})
 		                		self:hide()

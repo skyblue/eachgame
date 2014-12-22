@@ -63,7 +63,6 @@ local loopParse
     -- 读头
     if (self.nStatus == REQ_REQUEST) then
         if not read_header(self) then
-            -- dump("头部非正常重置")
             -- reset(self)
             if self.buf:getAvailable() >= PACKET_HEADER_SIZE then
                 loopParse(self)
@@ -84,7 +83,6 @@ local loopParse
     -- 完成向外派发事件并继续读取
     if self.nStatus == REQ_DONE then
         self:processServerMsg()
-        -- dump("读完包体正常重置")
         reset(self)
         loopParse(self)
     end
@@ -151,21 +149,22 @@ end
 
 function SocketEvent:onClose(__event)
     print("socket status: ".. __event.name)
-    self:dispatchEvent({name = " closed"})
+    self:dispatchEvent({name = "close"})
+    
 end
 
 function SocketEvent:onClosed(__event)
     print("socket status: ".. __event.name)
-    self:dispatchEvent({name = " closed"})
+    self:dispatchEvent({name = "closed"})
 end
 
 function SocketEvent:onConnectFailure(__event)
     print("socket status: ".. __event.name)
+    self:dispatchEvent({name = "failure"})
 end
 
 function SocketEvent:onConnect(__event)
     print("socket status: ".. __event.name)
-
     self:dispatchEvent({name = "contented"})
 end
 
@@ -192,9 +191,9 @@ end
 function SocketEvent:processServerMsg()
     self.readPacket:setPos(1)
     local packet = self.readPacket
-    dump("dispatch packet len  --  " .. packet:getLen())
+    -- dump("dispatch packet len  --  " .. packet:getLen())
     local cmd = packet:getBeginCmd()
-    dump("process cmd=" .. cmd)
+    -- dump("process cmd=" .. cmd)
     self:dispatchEvent({name = "onServerData", data= packet})
 end
 

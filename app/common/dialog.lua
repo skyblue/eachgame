@@ -13,15 +13,15 @@ local Dialog = class("Dialog",display.newLayer)
 
 function Dialog:ctor(title, msg, labels, listener, params)
     -- colors = colors or  {"white","green"}
-    self:setPosition(display.cx,display.cy)
+    self:setContentSize(display.width, display.height)
     self.listener = listener or function() return end
 
     local dialog = display.newNode()
+    dialog:setPosition(display.cx,display.cy)
     local bg = display.newSprite("#common/bg-dialog.png")
     dialog:addChild(bg)
     dialog._size = bg:getContentSize()
-    dialog:setContentSize(dialog._size)
-
+    self.bg = bg
     params = checktable(params)
     self.params = params
     params.textAlign = params.textAlign or cc.ui.TEXT_ALIGN_CENTER
@@ -82,7 +82,6 @@ function Dialog:ctor(title, msg, labels, listener, params)
             end)
             :onButtonClicked(function (event)
                 local e = {buttonIndex = i,target = btn, name="click"}
-                dump(e)
                 local status, ret = pcall(self.listener, e) --报错的情况
                 if status == false then
                     self:hide()
@@ -105,46 +104,28 @@ function Dialog:ctor(title, msg, labels, listener, params)
         easing = "BACKOUT"
         -- easing = "BOUNCEOUT",
     })
-    display.getRunningScene():addChild(self,15)
+    display.getRunningScene():addChild(self,30)
 
 
-    -- if device.platform == "android" then
-    --     EventPool:off("keypad.back", "dialog")
-    --     EventPool:once("keypad.back", function( ... )
-    --         if self and not tolua.isnull(self) then
-    --             local status, ret = pcall(function()
-    --                 return self.listener({name="back", buttonIndex = -1, target = self})
-    --             end)
-    --             if status == false then
-    --                 self:hide()
-    --             elseif ret ~= false then
-    --                 self:hide()
-    --             end
-    --             return false
-    --         end
-    --     end, "dialog")
-    -- end
+    if device.platform == "android" then
+        self:addNodeEventListener(cc.KEYPAD_EVENT, function(event)
+            print(event.name)
+        end)
+    end
 
     return self
 end
 
 function Dialog:onTouch()
     local layer = self
-    return function(eventType, x, y)
+    return function(event)
         if not self.dialog then return end
-        local ccp_touch = layer:convertToNodeSpace(cc.p(x,y))
-        local touched = self.dialog:getEventRect():containsPoint(ccp_touch)
+        local touched = self.bg:getCascadeBoundingBox():containsPoint(cc.p(event.x,event.y))
         if not touched then
-            if not self.params.block then
-                local status, ret = pcall(function()
-                    return self.listener({name="cancel", buttonIndex = -1, target = self})
-                end)
-                if status == false then
-                    self:hide()
-                elseif ret ~= false then
-                    self:hide()
-                end
-            end
+            local status, ret = pcall(function()
+                return self.listener({name="cancel", buttonIndex = -1, target = self})
+            end)
+            self:hide()
         end
         return true
     end
@@ -152,7 +133,7 @@ end
 
 
 function Dialog:hide()
-    -- utils.playSound("点击");
+    utils.playSound("click")
 
     self:setTouchEnabled(false)
     transition.scaleTo(self.dialog,{

@@ -43,7 +43,7 @@ function SendCMD:getSceneList(uid)
     self.socket:send(packet)
 end
 
-function SendCMD:chipinAction(_type,chipin)
+function SendCMD:chipinAction(chipin,_type)
     local packet = ByteArray.new()
     packet:Begin(ROOM_CMD.REQ_CHIP_ACTION)
     packet:writeInt(chipin)
@@ -106,7 +106,8 @@ end
 
 function SendCMD:changeToGameServer()
 	self.socket:close()
-   SocketEvent:init(CONFIG.gameServer ,CONFIG.gamePort ,true) 
+   -- SocketEvent:init(CONFIG.gameServer ,CONFIG.gamePort ,true) 
+   SocketEvent:init(CONFIG.gameServer ,CONFIG.gamePort ,false) 
 	--连上游戏服务器
 	-- self.socket:connect(CONFIG.gameServer,CONFIG.gamePort,true)
 end
@@ -159,8 +160,23 @@ function SendCMD:toGame(tid,_type)
     self.socket:send(packet)
 end
 
-function SendCMD:getShoplist(data)
-    
+function SendCMD:getShoplist()
+    local packet = ByteArray.new()
+    packet:Begin(CMD.REQ_SHOPLIST)
+    packet:End()
+    self.socket:send(packet)
+end 
+
+function SendCMD:buy(data)
+    local packet = ByteArray.new()
+    packet:Begin(CMD.REQ_BUY)
+    packet:writeString(data.productId)
+    packet:writeString(data.transactionIdentifier)
+    packet:writeChar(data.sandbox)
+    packet:writeInt(data.to_uid)
+    packet:writeString(data.receipt_data)
+    packet:End()
+    self.socket:send(packet)
 end
 
 function SendCMD:chat(msg,_type)
@@ -171,5 +187,31 @@ function SendCMD:chat(msg,_type)
     packet:End()
     self.socket:send(packet)
 end
+
+function SendCMD:heart()
+    local packet = ByteArray.new()
+    packet:Begin(CMD.HEART)
+    packet:End()
+    self.socket:send(packet)
+end
+
+function SendCMD:getMissionlist()
+    local packet = ByteArray.new()
+    packet:Begin(CMD.REQ_MISSIONLIST)
+    packet:End()
+    self.socket:send(packet)
+end 
+
+function SendCMD:completeMission(id)
+    local packet = ByteArray.new()
+    packet:Begin(CMD.REQ_MISSION_COM)
+    packet:writeInt(id)
+    packet:End()
+    self.socket:send(packet)
+end 
+
+
+
+
 
 return SendCMD

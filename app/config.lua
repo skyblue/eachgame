@@ -1,9 +1,11 @@
 
 -- 0 - disable debug info, 1 - less debug info, 2 - verbose debug info
+-- DEBUG = 0
 DEBUG = 1
 
 -- display FPS stats on screen
-DEBUG_FPS = true
+-- DEBUG_FPS = true
+DEBUG_FPS = false
 
 -- dump memory info every 10 seconds
 DEBUG_MEM = false
@@ -22,41 +24,46 @@ CONFIG_SCREEN_WIDTH  = 1704
 CONFIG_SCREEN_HEIGHT = 960
 
 -- auto scale mode
-CONFIG_SCREEN_AUTOSCALE = "FIXED_HEIGHT"
+-- CONFIG_SCREEN_AUTOSCALE = "FIXED_HEIGHT"
+CONFIG_SCREEN_AUTOSCALE = "FIXED_WIDTH"
 
 --一些全局实例数据
 _ = {}
 
 
 CONFIG={
+	sid = 2,---0、自身的几点号，1、游客，2、泡泡吃
 	appName = "一起德州",
 	gameId = 10002,
 	itunesId = 949785491,
 	EachGame_URL = "http://api.17yx.tk/" ,
 	-- EachGame_URL = "http://api.17test.tk/",
 	-- EachGame_URL = "http://api.eachgame.com/",
-	API_URL = "http://192.168.1.109/pokerp/api/flashapi.php",
+	API_URL = "texas.eachgame.com",
 	ORIGIN_API_URL = "http://192.168.1.109/pokerp/api/flashapi.php",
 	BACKUP_API_URL = "http://192.168.1.109/pokerp/api/flashapi.php",
 	useBackupApi = "false",
 	server = "192.168.1.11",
+	-- server = "texas.eachgame.com",
 	port = "3050",
 	-- server = "192.168.1.34",
 	-- port = "9501",
 	gameServer = "192.168.1.11",
+	-- gameServer = "texas.eachgame.com",
 	gamePort = "3050",
 
 	appversion = "1.0.0",
 	versioncode = 1,
-	uploadPic = "true",
+	uploadPic = true,
 	umengid="",
 	channel = "",
 	lang ="cn",
-	appid = 100,
+	appid = 1001,
 	coinList = "",
 	levelExps="",
 	clinet_diftime = 0 ,
 
+	cardtypes    = {'高牌', '一对', '两对', '三条', '顺子', '同花', '葫芦', '四条', '同花顺', '皇家同花顺'},
 	coinList     = {1,5,25,100,500,1000,5000,10000,25000,50000,100000,500000,1000000},
 	status= {"弃牌","看牌","跟注","加注","全下","小盲注","大盲注","下注"},
 	cards ={102,103,104,105,106,107,108,109,110,111,112,113,114,
@@ -64,11 +71,11 @@ CONFIG={
 			302,303,304,305,306,307,308,309,310,311,312,313,314,
 			402,403,404,405,406,407,408,409,410,411,412,413,414
 			},
-	selectRoom={
-				{name="一级荷官",min_b = 10,max_b = 500,min_buying = "1万",max_buying ="10万"},
-				{name="二级荷官",min_b = 1000,max_b = 10000,min_buying = "20万",max_buying ="200万"},
-				{name="三级荷官",min_b = 20000,max_b = 100000,min_buying = "400万",max_buying ="1亿"},
-			},
+	-- selectRoom={
+	-- 			{name="一级荷官",min_b = 10,max_b = 500,min_buying = "1万",max_buying ="10万"},
+	-- 			{name="二级荷官",min_b = 1000,max_b = 10000,min_buying = "20万",max_buying ="200万"},
+	-- 			{name="三级荷官",min_b = 20000,max_b = 100000,min_buying = "400万",max_buying ="1亿"},
+	-- 		},
 }
 
 USER ={
@@ -77,6 +84,7 @@ USER ={
 }
 
 CMD = {
+	HEART			= 0,
 	REQ_REG 		= 1,
 	REQ_LOGIN 		= 2,
 	RSP_LOGIN 		= 3,
@@ -102,8 +110,14 @@ CMD = {
 	RSP_SHOPLIST	= 13,
 	REQ_BUY			= 14,
 	RSP_BUY			= 15,
-	CHAT 			= 2111,
-	CHAT_NTF 		= 2112,
+
+	REQ_MISSIONLIST	= 20,
+	RSP_MISSIONLIST	= 21,
+	REQ_MISSION_COM	= 22,
+	RSP_MISSION_COM	= 23,
+
+	CHAT 			= 3001,
+	CHAT_NTF 		= 3002,
 }
 
 ROOM_CMD = {

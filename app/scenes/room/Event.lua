@@ -8,8 +8,10 @@ function Event:init(room)
 	self.room = room
 	local seats =  room.parts["seats"]
 	SocketEvent:addEventListener(ROOM_CMD.NTF_GAME_START .. "back", function(event)
+		self:clearDelay()
 		local data = event.data
 		room.model = data
+		dump(data)
 		room.model._resetSeats = false
 		--清理下状态
 		for i,seat in ipairs(seats) do
@@ -17,6 +19,7 @@ function Event:init(room)
 	        seat:changeChipin(0)
 	        seat:changeStatus(0)
 	        seat:setCardsVisible(false)
+	        seat:hideWin()
 	        local uid = checkint(seat.model.uid)
 	        if uid == 0 then
 	            seat:changeBuying(false)
@@ -32,14 +35,14 @@ function Event:init(room)
 	        end
 	        if v.seatid == data.sSeat then --自己处理小盲
 	        	scheduler.performWithDelayGlobal(function (  )
-	        		seat:changeBuying(v.buying - data.s_blind)
+	        		seat:changeBuying(v.buying)
 	        		seat:changeChipin(data.s_blind)
 	        		seat:changeStatus(CON__USER_BET)
 	        		room:chipin(seat)
 	        	end,1)
 	        elseif v.seatid == data.bSeat then --自己处理大盲
 	        	scheduler.performWithDelayGlobal(function (  )
-	        		seat:changeBuying(v.buying - data.b_blind)
+	        		seat:changeBuying(v.buying)
 	        		seat:changeChipin(data.b_blind)
 	        		seat:changeStatus(CON__USER_BET)
 	        		room:chipin(seat)
@@ -62,7 +65,7 @@ function Event:init(room)
 
     SocketEvent:addEventListener(ROOM_CMD.RSP_FINAL_ROUND .. "back", function(event)
     	local data = event.data
-    	local seats = room.parts["seats"]
+    	dump(data)
     	if checkint(data.round_pot) == 0 then return end
 
     	scheduler.performWithDelayGlobal(function (  )
@@ -81,40 +84,44 @@ function Event:init(room)
     end)
 
     SocketEvent:addEventListener(ROOM_CMD.RSP_FINAL_GAME .. "back", function(event)
+    	local data = event.data
+    	dump(data)
     	room.parts["action"]:stopChipin()
-	    local seats = room.parts["seats"]
 	    local users = data.users
-	    table.sort(users,function(a,b)
-	        return a._type > b._type
-	    end)
+	    if #users > 1 then
+		    table.sort(users,function(a,b)
+		        return a.type > b.type
+		    end)
+		end
 	    local winner = {}
 	    local hand_cards
 	    for i,u in ipairs(users) do
 	        local seat = seats[u.seatid]
+	        seat:stopChipin()
             seat.parts["clock"]:stop()
-            if data.type == 1 and u.seatid ~= USER.seatid and #(_t(u.cards)) > 0  then
+            if data._type == 1 and u.seatid ~= USER.seatid and #(checktable(u.hand_cards)) > 0  then
 	            seat:moveCard(u.seatid)
-	            seat:changeCard(u.cards)
+	            seat:changeCard(u.hand_cards)
 	        end
-	        hand_cards = seat.model.imd == USER.uid
-	        			and action_layer.parts["hand_cards"]
+	        hand_cards = seat.model.uid == USER.uid
+	        			and room.parts["action"].parts["hand_cards"]
 	        			or seat.parts["hand_cards"]
-	        if data.type == 0 and u.win > 0 then
+	        if data._type == 0 and u.win > 0 then
 	            table.insert(winner,u)
 	            seat:setCardsVisible(false)
-	            -- seat:changeWinStatus(0,u.win,u.hightcards)
-	        elseif data.type == 1 then
+	            -- seat:changeWinStatus(0,u.win)
+	        elseif data._type == 1 then
 	        	if u.win > 0 then
 	                table.insert(winner,u)
 	            else
 	                hand_cards.card1:gray()
 	                hand_cards.card2:gray()
 	            end
-	            -- seat:changeWinStatus(u.type,u.win,u.hightcards)
+	            -- seat:changeWinStatus(u.type,u.win)
 	        end
 	    end
         local public_cards_val = room.parts['public_cards'].val
-        -- self:changeCardType(false) --隐藏所有牌的亮边
+        room:hideCardLine() --隐藏所有牌的亮边
         local pot = room.parts["pot"]
         if #users > 0 then
         	self._tid_finalGame = scheduler.performWithDelayGlobal(function (  )
@@ -125,39 +132,38 @@ function Event:init(room)
 	                end
 	            end
 	            -- 弃牌赢 
-        		if data.type == 0 then
+        		if data._type == 0 then
         			local u = winner[1]
                     local seat = seats[u.seatid]
                     pot:moveToSeat(seat,pot.val - u.win)
                     if  not seat.model.uid  then return end
                 	seat:changeBuying(u.buying)
-                	if seat.model.uid == USER.uid then
-                		--播放赢的动画
-                		seat.showWin()
-                    end
+            		--播放赢的动画
+            		seat:showWin(u.type,u.win)
+            		-- winner = {}
         		else
         			for i,u in ipairs(winner) do
 		                local seat = seats[u.seatid]
 		                scheduler.performWithDelayGlobal(function()
-		                	if seat.model.uid == USER.uid then
-	                    		--播放赢的动画
-	                    		seat.showWin()
-		                    end
-		                     --移动筹码
-		                    pot:moveToSeat(seat, pot.val - u.win)
+                    		--播放赢的动画
+                    		seat:showWin(u.type,u.win)
+                    		scheduler.performWithDelayGlobal(function()
+			                     --移动筹码
+			                    pot:moveToSeat(seat, checkint(pot.val) - u.win)
+			                end,1)
 		                    if seat.model.uid  then
 		                        seat:changeBuying(u.buying)
 		                    end
 		                    -- 亮高牌
-		                    local hand_cards = seat.model.imd == USER.uid
-		                                            and action_layer.parts["hand_cards"]
+		                    local hand_cards = seat.model.uid == USER.uid
+		                                            and room.parts["action"].parts["hand_cards"]
 		                                            or seat.parts["hand_cards"]
 		                    local all_cards = {}
 		                    local hand_cards_cards = {hand_cards.card1,hand_cards.card2}
 		                    table.append(all_cards,hand_cards_cards)
 		                    table.append(all_cards,room.parts['public_cards'].cards)
 		                    for i,card in ipairs(all_cards) do
-		                        if table.indexOf(u.hightcards,card.value) then
+		                        if table.indexof(u.hight_cards,card._value) then
 		                            card:normal()
 		                        else
 		                            card:gray()
@@ -173,12 +179,15 @@ function Event:init(room)
 					end
         		end
         	end,1.4)
-	        local wait_time = 4 * #winner + 1.2
-		    scheduler.performWithDelayGlobal(function()
-		        self.parts["pot"]:clearAll()
-		    end,wait_time)
+	     --    local wait_time = 3 * #winner + 1.2
+		    -- self._tid_clearpot = scheduler.performWithDelayGlobal(function()
+		    -- 	if room.parts["pot"] then
+		    --     	room.parts["pot"]:clear()
+		    --     end
+		    -- end,wait_time)
 		     -- 清理全部
 		    self._tid_clearup = scheduler.performWithDelayGlobal(function()
+		    	room.parts["pot"]:clear()
 		        room.parts['public_cards']:reset()
 		        for i,u in ipairs(users) do
 		            local seat = seats[u.seatid]
@@ -189,18 +198,16 @@ function Event:init(room)
 		            else
 		                seat:changeCard(0)
 		            end
-		            seat:changeWinStatus(false)
+		            seat:hideWin()
 		        end
-		    end,6 * #winner + 4)
+		    end,3 * #winner + 1.2)
 
 	    end
    	end)
 
    	SocketEvent:addEventListener(ROOM_CMD.NTF_OUT_TABLE .. "back", function(event)
-    	-- Room:exit()
-    	-- display.replaceScene(_.Hall)
     	dump(event.data)
-    	for i,v in ipairs(room.parts["seats"]) do
+    	for i,v in ipairs(seats) do
     		if v.model.uid == event.data then
     			v:changeUser(nil)
     		end
@@ -209,22 +216,25 @@ function Event:init(room)
    	end)
 
     SocketEvent:addEventListener(ROOM_CMD.NTF_BUYING .. "back", function(event)
-    	local seat = room.parts["seats"][data.seatid]
+    	local data = event.data
+    	local seat =seats[data.seatid]
     	seat:changeBuying("取筹码")
 	    if data.buying > 0 then   --自动buyin 有bug ,需要屏蔽
 	        scheduler.performWithDelayGlobal(function()
 	            seat:changeBuying(data.buying)
 	        end, 2)
 	    end
-        seat.model.uchips = data.chips
+        seat.model.uchips = data.uchips
     end)
 
     SocketEvent:addEventListener(ROOM_CMD.NTF_USER_STAND .. "back", function(event)
     	local data = event.data
-    	local seat = room.parts["seats"][data.seatid]
+    	dump(data)
+    	local seat = seats[data.seatid]
     	if USER.uid == data.uid then
     		USER.seatid = 0
     		room.parts["action"]:stopChipin()
+    		room.parts["action"]:changeCard()
     		for i, seat in ipairs(room.parts['seats']) do
 	            seat:changeSitStatus(0)
 	        end
@@ -236,7 +246,8 @@ function Event:init(room)
     SocketEvent:addEventListener(ROOM_CMD.NTF_CHIP_ACTION .. "back", function(event)
     	local data = event.data
 		dump(data)
-		local seat = room.parts["seats"][data.seatid]
+
+		local seat = seats[data.seatid]
 		if data.uid == USER.uid then
 			room.parts["action"]:stopChipin()
 		else
@@ -246,15 +257,17 @@ function Event:init(room)
 	    seat:changeChipin(data.chipin)
 	    seat:changeStatus(data.type)
 	    if data.type   == 1 then  -- 弃牌
-	        -- utils.playSound("弃牌")
+	        utils.playSound("fold")
 	        if seat.model.uid == USER.uid then
 	            room.parts["action"]:fold()
         	end
         elseif data.type == 2 then
-        	-- utils.playSound("看牌")
+        	utils.playSound("check")
         elseif data.type > 2 and data.type < 9  then
-	        if data.type ~= 6 and data.type ~= 7 then
-	            -- utils.playSound("加注")
+	        if data.type == 3 then
+	            utils.playSound("raise")
+	        elseif data.type == 4 then
+	        	utils.playSound("call")
 	        end
 	        room:chipin(seat)
 	    end
@@ -262,20 +275,16 @@ function Event:init(room)
 
     SocketEvent:addEventListener(ROOM_CMD.NTF_START_ACTION .. "back", function(event)
 		local data = event.data
-		
 		dump(data)
 		data.gap_sec = data.gap_sec or room.model.gap_sec
-		local seat = room.parts["seats"][data.seatid]
-		dump(room.parts["seats"])
+		local seat = seats[data.seatid]
 		if data.uid == USER.uid then
 			if seat.model.status == 1 then return end --已弃牌则不处理
 			if data.chipin>0 then
 	            seat.model.chipin = data.chipin
 	        end
-	        dump(seat.model)
 	        room.parts["action"]:startChipin(data,seat)
 		else
-			dump(seat.model)
 			seat:startChipin(data)
 		end
 		-- 清除上次状态
@@ -284,8 +293,9 @@ function Event:init(room)
 
     SocketEvent:addEventListener(ROOM_CMD.NTF_USER_SIT .. "back", function(event)
 		local data = event.data
+		dump(data)
 		local seatid = checkint(data.seatid)
-	    local seat = room.parts["seats"][seatid]
+	    local seat = seats[seatid]
 	    if not seat or checknumber(seat.model.uid) > 0 then return end
 		data.status = data.status or 10
 
@@ -313,8 +323,23 @@ function Event:init(room)
 
 end
 
+function Event:clearDelay()
+	if(self._tid_clearup) then
+        scheduler.unscheduleGlobal(self._tid_clearup)
+        self._tid_clearup = nil
+    end
+    if(self._tid_finalGame ) then
+        scheduler.unscheduleGlobal(self._tid_finalGame)
+        self._tid_finalGame = nil
+    end
+    if(self._tid_clearpot ) then
+        scheduler.unscheduleGlobal(self._tid_clearpot)
+        self._tid_clearpot = nil
+    end
+end
+
 function Event:exit()
-	dump("Event:exit()")
+    self:clearDelay()
 	SocketEvent:removeEventListenersByEvent(ROOM_CMD.RSP_HAND_CARDS .. "back")
 	SocketEvent:removeEventListenersByEvent(ROOM_CMD.NTF_USER_SIT .. "back")
 	SocketEvent:removeEventListenersByEvent(ROOM_CMD.NTF_START_ACTION .. "back")
@@ -326,6 +351,7 @@ function Event:exit()
 	SocketEvent:removeEventListenersByEvent(ROOM_CMD.NTF_GAME_START .. "back")
 	SocketEvent:removeEventListenersByEvent(ROOM_CMD.RSP_FINAL_ROUND .. "back")
 	SocketEvent:removeEventListenersByEvent(ROOM_CMD.RSP_RIVER .. "back")
+	_.Event = nil
 end
 
 return Event

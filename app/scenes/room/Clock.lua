@@ -1,9 +1,8 @@
 local Clock  =  class("Clock",display.newNode)
 
-function Clock:ctor()
-    self.round = display.newSprite("#room/daojishi-chang.png")
-
-    local progress = cc.ProgressTimer:create(self.round)
+function Clock:ctor(second)
+    self.second = second
+    local progress = cc.ProgressTimer:create(display.newSprite("#room/daojishi-chang.png"))
     progress:setType(display.PROGRESS_TIMER_RADIAL)
     self:addChild(progress)
     self.arc = progress
@@ -34,43 +33,44 @@ function Clock:_timer(val)
 end
 
 function Clock:start(second,isshow_num)
-    second = second or 15
-    -- second = 15
-    self.second = second
+    second = second or 10
     self:setVisible(true)
-    -- self.num:setString(_s(second))
     color1 = 38
     color2 =230
-    local a1 = cc.ProgressFromTo:create(second,100,0);
+    local is_delay = second/self.second
+
+    self.arc:getSprite():setColor(cc.c3b(color1,color2,0))
+    local a1 = cc.ProgressFromTo:create(second,is_delay * 100,0);
     self.arc:runAction(a1)
-    -- if isshow_num == true then
-    --     self.num:setVisible(true)
-    --     self.tid = self:schedule(self:_timer(second),1)
-    -- end
-    local step = 0.08
+    self.step = 8
     if second < 15 then
-        step = 0.12
+        self.step = 10
     end
-    -- self.set_color_id = self:schedule(self:_setColor(1),0.1) --手动设置颜色值
-    self:addNodeEventListener(cc.NODE_ENTER_FRAME_EVENT, self:_setColor(step))
-    self:scheduleUpdate()
+    if is_delay ~= 1 then
+        self.step = self.step * self.second / second
+    end
+    if not self.set_color_id then
+        self.set_color_id = self:schedule(self:_setColor(),0.3)
+    end
 end
+
 local color1 = 38
 local color2 = 230
-function Clock:_setColor( step )
+function Clock:_setColor( )
     return function ()
-        self.round:setColor(cc.c3b(color1,color2,0))
+        -- dump(self.step)
+        self.arc:getSprite():setColor(cc.c3b(color1,color2,0))
         if color1 >= 240 then
-            step = - math.abs(step)
+            self.step = - math.abs(self.step)
             color1= 255
         end
-        if step < 0 then
-            color2 = color2 + step
+        if self.step < 0 then
+            color2 = color2 + self.step
             if color2 <= 0 then
                 color2 = 0
             end
         else
-            color1 = color1 + step
+            color1 = color1 + self.step
         end
     end
 
@@ -79,8 +79,11 @@ end
 function Clock:stop()
     color1 = 38
     color2 =230
-    self.round:setColor(cc.c3b(color1,color2,0))
-    self:unscheduleUpdate()
+    self.arc:getSprite():setColor(cc.c3b(color1,color2,0))
+    if self.set_color_id then
+        transition.removeAction(self.set_color_id)
+        self.set_color_id = nil
+    end
     transition.stopTarget(self.arc)
     self:setVisible(false)
 end

@@ -17,9 +17,10 @@ function PublicCard:showCard(from,to,val)
 	local delay = 0
 	for i=from,to do
 		card = self.cards[i]
-		if card.value ~= val[i] and val[i] > 0 then
+		if card._value ~= val[i] and val[i] > 0 then
 			card:setVisible(true)
 			card:changeVal(val[i])
+			utils.playSound("poker")
 		end
 	end
 end

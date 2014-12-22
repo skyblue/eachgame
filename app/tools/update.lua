@@ -22,13 +22,15 @@ local downList = {}
 -- local configLang = {}
 local ok
 local code
-if device.platform ~= "android" then 
-    ok,code= luaoc.callStaticMethod("Helper","getAppVersionCode")
+if device.platform == "ios" then 
+    if luaoc then
+        ok,code= luaoc.callStaticMethod("Helper","getAppVersionCode")
+    end
 else
-    ok,code= luaj.callStaticMethod("Helper","getAppVersionCode")
+    if luaj then
+        ok,code= luaj.callStaticMethod("Helper","getAppVersionCode")
+    end
 end
-dump(ok)
-dump(code)
 
 -- function string.lastIndexOf(haystack, needle)
 --     local i, j
@@ -104,6 +106,8 @@ local function checkDirOK( path )
 end
 
 function UpdateScene:ctor()
+    local bg = display.newSprite("res/img/loading-bg.png",display.cx,display.cy)
+        :addTo(self)
     self.path = device.writablePath.."upd/"
     local yy = display.cy * 0.15
     cc.ui.UILabel.new({text = "跳过", size = 20})
@@ -189,13 +193,14 @@ end
 
 function UpdateScene:dofile(file )
     local val = readFile(file)
-    return totable(json.decode(val))
+    return checktable(json.decode(val))
 end
 
 function UpdateScene:start()
     -- do return end
     -- require("app.app")
     -- display.replaceScene(MainScene.new())
+    -- self:removeSelf()
     function __G__TRACKBACK__(errorMessage)
         print("----------------------------------------")
         print("LUA ERROR: "..tostring(errorMessage).."\n")
@@ -313,6 +318,8 @@ function UpdateScene:request(url,callback,params,method,cacheable)
         req:start()
 end
 function UpdateScene:onEnter()
+    self:start()
+    do return end
      -- if 1 then
     if not checkDirOK(self.path) then
         if io.exists(self.path.."game.zip") then
@@ -325,6 +332,10 @@ function UpdateScene:onEnter()
     -- if io.exists(self.path.."game.zip") then
     --     removeFile(self.path.."game.zip")
     -- end
+
+    -- display.addSpriteFrames("img/hall.plist","img/hall.png")
+    -- local bg = display.newSprite("img/hall-bg.png",display.cx,display.cy)
+    --     :addTo(self)
 
     cc.FileUtils:getInstance():addSearchPath(self.path)
     self.curListFile =  self.path..list_filename

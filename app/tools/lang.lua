@@ -11,7 +11,7 @@ Lang = {
 	RSP_IN_TABLE_3 = "系统错误，请重试！",
 
 	RSP_USER_SIT_1 = "无效的座位号！",
-	RSP_USER_SIT_2 = "你离开太久或帐号在其它地方登陆，请重新登陆！",
+	RSP_USER_SIT_2 = "你离开太久或帐号在其它\n地方登陆，请重新登陆！",
 	RSP_USER_SIT_3 = "您的筹码不够了！",
 	RSP_USER_SIT_4 = "座位上已经有人座了！",
 	RSP_USER_SIT_5 = "你不在房间里！",
@@ -25,7 +25,8 @@ Lang = {
 	RSP_USER_STAND_2 = "",
 	RSP_USER_STAND_2 = "",
 	
-
+	RSP_BUY_0		 = "购买成功！",
+	RSP_BUY_1		 = "购买失败！",
 }
 --密码错误！
 Lang["RSP_LOGIN_4"] = Lang["RSP_LOGIN_2"]
@@ -37,4 +38,14 @@ Lang["RSP_OUT_TABLE_2"] = Lang["RSP_USER_SIT_2"]
 Lang["RSP_OUT_TABLE_3"] = Lang["RSP_USER_SIT_5"]
 Lang["RSP_USER_STAND_3"] = Lang["RSP_USER_SIT_5"]
 
+--RSP_BUY_1		 = "购买失败",
+Lang["RSP_BUY_2"] = Lang["RSP_BUY_1"]
+Lang["RSP_BUY_3"] = Lang["RSP_BUY_1"]
+Lang["RSP_BUY_4"] = Lang["RSP_BUY_1"]
+Lang["RSP_BUY_5"] = Lang["RSP_BUY_1"]
+Lang["RSP_BUY_6"] = Lang["RSP_BUY_1"]
+Lang["RSP_BUY_7"] = Lang["RSP_BUY_1"]
+Lang["RSP_BUY_8"] = Lang["RSP_BUY_1"]
+Lang["RSP_BUY_9"] = Lang["RSP_BUY_1"]
+Lang["RSP_BUY_10"] = Lang["RSP_BUY_1"]
 return Lang

@@ -10,13 +10,8 @@ end
 
 function Action:action(actionCode)
 	return function ( event )
-		dump(actionCode)
-        if actionCode ==  CON__USER_FOLD then
-            self:fold()
-        else
-
-        end
         SendCMD:chipinAction(0,actionCode)
+        self:hideRaise()
 	end
 end
 
@@ -41,7 +36,7 @@ function Action:initRaise()
     local mask = display.newSprite("#room/jiama-bg.png")
         :addTo(raiseLayer)
     self.parts["raise_mask"] = mask
-    cc.ui.UILabel.new({text = "加注", size = 40, font = "Helvetica-Bold"})
+    self.parts["raise-call-lable"] = cc.ui.UILabel.new({text = "加注", size = 40, font = "Helvetica-Bold"})
         :align(display.CENTER, 140, 60)
         :addTo(raise)
     mask:setVisible(false)
@@ -62,10 +57,6 @@ function Action:initRaise()
 end
 
 function Action:raise()
-    self.options ={
-        max_raise = 2000,
-        checkints_allin = true
-    }
     local raise_val,changeY = 0,0
     local _start_line,max_line = 104,580
     local steps,divi_len,_new_y,idx
@@ -75,7 +66,7 @@ function Action:raise()
         if event.name == "began" then
             self.parts["cycle-raise"]:setSpriteFrame(cc.SpriteFrameCache:getInstance():getSpriteFrame("room/anniu-2.png"))
             self.parts["raise_mask"]:setVisible(true)
-            steps = self:genSteps(2000 , 20)
+            steps = self.steps
             steps_len = math.max(1,#steps)
             divi_len = ((max_line - _start_line) / steps_len);
             return true
@@ -137,11 +128,11 @@ function Action:initBtn()
                 end)
                 :onButtonClicked(self:action(CON__USER_CHECK))
                 :addTo(self)
-
+    parts["cycle-check"].pos = cc.p(110 ,60)
     parts["cycle-fold"] = cc.ui.UIPushButton.new("#common/green-btn.png", {scale9 = true})
                 :setButtonSize(280, 104)
                 :setButtonLabel(cc.ui.UILabel.new({text = "弃牌", size = 40, font = "Helvetica-Bold"}))
-                :pos(display.cx - 450 ,60)
+                :pos(110  ,60)
                 :onButtonPressed(function(event)
                     -- sprite:runAction(cc.TintBy:create(0,-128,-128,-128))
                 end)
@@ -162,18 +153,15 @@ function Action:initBtn()
                 end)
                 :onButtonClicked(self:action(CON__USER_CALL))
                 :addTo(self)
-
+    parts["cycle-call"].pos = cc.p(display.cx - 450 ,60)
     self:hideAction()
 end
 
 
 function Action:startChipin(data,seat)
     self:hideAction()
-    self.parts['cycle-fold']:setVisible(true)
-    dump(data)
-    dump(seat.model)
     self.seat = seat
-    -- utils.playSound("轮到玩家");
+    utils.playSound("trun");
     self._activating = true
     self._touched = false
     data.buying = checkint(seat.model.buying)
@@ -195,16 +183,16 @@ function Action:startChipin(data,seat)
             table.insert(self.steps,v)
         end
     end
-
-    -- if data.checkints_allin then
-    --     self.parts['cycle-allin']:setVisible(true)
-    -- end
+    self.parts['cycle-fold']:setVisible(true)
     if(data._can_check) then
+        self.parts['cycle-fold']:setPositionX(self.parts['cycle-check'].pos.x)
         self.parts['cycle-check']:setVisible(true)
-        self.parts['cycle-raise']:getButtonLabel():setString("下注")
+        self.parts['cycle-check']:setPositionX(self.parts['cycle-call'].pos.x)
+         self.parts["raise-call-lable"]:setString("下注")
         --也许有必要设置下颜色
         self.parts['cycle-raise'].action = "bet"
     else
+        self.parts['cycle-fold']:setPositionX(self.parts['cycle-check'].pos.x)
         self.parts['cycle-call']:setVisible(true)
         local val = data.need_call - data.chipin
         if val <= 0 then
@@ -218,7 +206,7 @@ function Action:startChipin(data,seat)
 
         if self.parts['cycle-raise'].action == "bet" then
             self.parts['cycle-raise'].action = "raise"
-            self.parts['cycle-raise']:getButtonLabel():setString("加注")
+             self.parts["raise-call-lable"]:setString("加注")
         end
     end
 
@@ -248,8 +236,11 @@ end
 function Action:stopChipin()
     self._activating = false
     self:hideAction()
+    self:hideRaise()
     -- self.parts["clock"]:stop()
-    self.seat:stopChipin()
+    if self.seat then
+        self.seat:stopChipin()
+    end
     if self._tid_vibrate then
         scheduler.unscheduleGlobal(self._tid_vibrate)
         self._tid_vibrate = nil
@@ -278,20 +269,28 @@ function Action:genSteps(max,step)
 end
 
 function Action:fold(  )
-    local card1,card2 = self.parts["hand_cards"].card1,self.parts["hand_cards"].card2
-    transition.stopTarget(card1)
-    transition.stopTarget(card2)
-    local t = 0.4
-    local a11 = cc.MoveTo:create(t,cc.p(0,display.top + 200))
-    local a12 = cc.RotateTo:create(t,-200)
-    local card1_action = cc.Spawn:create({a11,a12})
-    card1:runAction(card1_action)
+    self.parts["hand_cards"].card1:gray()
+    self.parts["hand_cards"].card2:gray()
+    -- local card1,card2 = self.parts["hand_cards"].card1,self.parts["hand_cards"].card2
+    -- transition.stopTarget(card1)
+    -- transition.stopTarget(card2)
+    -- local t = 0.4
+    -- local a11 = cc.MoveTo:create(t,cc.p(0,display.top + 200))
+    -- local a12 = cc.RotateTo:create(t,-200)
+    -- local card1_action = cc.Spawn:create({a11,a12})
+    -- -- card1:runAction(card1_action)
+    -- transition.execute(card2,card1_action,{onCompleate =  function()
 
-    local a21 = cc.DelayTime:create(0.05)
-    local a22 = cc.MoveTo:create(t,cc.p( 80,display.top + 200))
-    local a23 = cc.RotateTo:create(t,120)
-    local card2_action = transition.sequence({a21,cc.Spawn:create({a22,a23})})
-    card2:runAction(card2_action)
+    --     end})
+
+    -- local a21 = cc.DelayTime:create(0.05)
+    -- local a22 = cc.MoveTo:create(t,cc.p( 80,display.top + 200))
+    -- local a23 = cc.RotateTo:create(t,120)
+    -- local card2_action = transition.sequence({a21,cc.Spawn:create({a22,a23})})
+    -- transition.execute(card2,card2_action,{onCompleate =  function()
+
+    --     end})
+    -- -- card2:runAction(card2_action)
 end
 
 function Action:resetHandCard()
@@ -316,7 +315,7 @@ function Action:initHandCard( )
     card1:setVisible(false)
     card2:setVisible(false)
     hand_cards:setScale(0.8)
-    hand_cards:pos(190,230)
+    hand_cards:pos(170,display.height * 0.24)
     self:addChild(hand_cards,19)
     self:resetHandCard()
 end 
@@ -324,7 +323,7 @@ end
 function Action:changeCard(vals)
     local hand_cards = self.parts["hand_cards"]
     local card1 , card2 = hand_cards.card1,hand_cards.card2
-    if type(vals) ~= "table"  or not checkint(vals[1]) or not checkint(vals[2])  then
+    if type(vals) ~= "table"  or not checkint(vals[1]) or not checkint(vals[2]) or checkint(USER.seatid) <=0  then
         card1:setVisible(false)
         card2:setVisible(false)
         card1:changeVal(0)
@@ -334,6 +333,7 @@ function Action:changeCard(vals)
         card2:setVisible(true)
         card1:changeVal(vals[1])
         card2:changeVal(vals[2])
+        utils.playSound("poker")
         if self.seat then
             self.seat.model.cards = vals
             --弃牌

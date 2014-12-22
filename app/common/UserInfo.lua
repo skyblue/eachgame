@@ -4,9 +4,10 @@ function UserInfo:initMyInfo()
 	local bg = display.newSprite("img/myinfo-bg.png",display.cx,display.cy)
     :addTo(self)
     bg:setVisible(false)
-    local head = utils.makeAvatar(nil,cc.size(216, 216),nil,nil,2)
+    local head = utils.makeAvatar({size = cc.size(216, 216),mask_choose =2})
+    -- border = "#hall/head-bg.png"
 	head:setPosition(400,bg:getContentSize().height -380)
-	bg:addChild(head)
+	bg:addChild(head)	
 	head:setScale(1.2)
     cc.ui.UIPushButton.new("#common/close_icon.png")
             :align(display.CENTER,bg:getContentSize().width-150,bg:getContentSize().height-94)
@@ -17,7 +18,8 @@ function UserInfo:initMyInfo()
                     -- sprite:runAction(cc.TintBy:create(0,255,255,255))
             end)
             :onButtonClicked(function (event)
-                    self:hide()
+            	utils.playSound("click")
+                self:hide()
             end)
             :addTo(bg)
 	local menu = {"meun_1","meun_2","meun_2","meun_3"}
@@ -57,7 +59,8 @@ function UserInfo:initMyInfo()
             		--切换下资料
             		self:changeMyinfo()
             end)
-            :addTo(bg) 
+            :addTo(bg)
+            :setVisible(false) 
 	end
 	self.myinfo = bg
 	self:initPublicInfo(bg)
@@ -67,7 +70,7 @@ function UserInfo:initOtherInfo()
 	local bg = display.newSprite("#common/userinfo-bg.png",display.cx,display.cy)
     :addTo(self)
     bg:setVisible(false)
-    local head = utils.makeAvatar(nil,cc.size(216, 216),nil,nil,2)
+    local head = utils.makeAvatar({size = cc.size(216, 216),mask_choose =2})
 	head:setPosition(200,bg:getContentSize().height - 200)
 	bg:addChild(head)
 	cc.ui.UIPushButton.new("#common/close_icon.png")
@@ -82,29 +85,29 @@ function UserInfo:initOtherInfo()
                     self:hide()
             end)
             :addTo(bg)
-    local addFriend = cc.ui.UIPushButton.new("#common/green-btn.png", {scale9 = true})
-			:setButtonSize(160, 90)
-            :setButtonLabel(cc.ui.UILabel.new({
-                    text = "关注", 
-                    size = 34, 
-                    font = "Helvetica",
-                    align = cc.ui.TEXT_ALIGN_RIGHT,
-                    })
-                    )
-            :setButtonLabelOffset(24,0)
-            :align(display.LEFT_CENTER,100,340)
-            :onButtonPressed(function(event)
-                    -- sprite:runAction(cc.TintBy:create(0,-128,-128,-128))
-            end)
-            :onButtonRelease(function(event)
-                    -- sprite:runAction(cc.TintBy:create(0,255,255,255))
-            end)
-            :onButtonClicked(function (event)
-                    dump("add friend")
-            end)
-            :addTo(bg)  
-	display.newSprite("#common/add-friend.png",36,6):addTo(addFriend)
-	self.parts["addFriend"] = addFriend
+ --    local addFriend = cc.ui.UIPushButton.new("#common/green-btn.png", {scale9 = true})
+	-- 		:setButtonSize(160, 90)
+ --            :setButtonLabel(cc.ui.UILabel.new({
+ --                    text = "关注", 
+ --                    size = 34, 
+ --                    font = "Helvetica",
+ --                    align = cc.ui.TEXT_ALIGN_RIGHT,
+ --                    })
+ --                    )
+ --            :setButtonLabelOffset(24,0)
+ --            :align(display.LEFT_CENTER,100,340)
+ --            :onButtonPressed(function(event)
+ --                    -- sprite:runAction(cc.TintBy:create(0,-128,-128,-128))
+ --            end)
+ --            :onButtonRelease(function(event)
+ --                    -- sprite:runAction(cc.TintBy:create(0,255,255,255))
+ --            end)
+ --            :onButtonClicked(function (event)
+ --                    dump("add friend")
+ --            end)
+ --            :addTo(bg)
+	-- display.newSprite("#common/add-friend.png",36,6):addTo(addFriend)
+	-- self.parts["addFriend"] = addFriend
 
 	display.newSprite("#common/line.png",bg:getContentSize().width/2,200):addTo(bg)
 
@@ -127,7 +130,8 @@ function UserInfo:initOtherInfo()
 	            :onButtonClicked(function (event)
 	                     dump(i)
 	            end)
-	            :addTo(propsBg) 
+	            :addTo(propsBg)
+
 	    end
 	end
 	self.otherinfo = bg
@@ -142,7 +146,7 @@ function UserInfo:initPublicInfo(bg)
 		bg.text[i] = cc.ui.UILabel.new({
             UILabelType = 2,
             text = "",
-            size = i == 1 and 34 or 24,
+            size = 34,
             color = table.indexof({2,3},i) and cc.c3b(254,221,70) or cc.c3b(255,0,0),
             })
             :align(display.LEFT_CENTER)
@@ -172,14 +176,16 @@ end
 
 function UserInfo:show(user)
 	local xx,yy,height,textIcon,text,pokerIcon,sexIcon,bg = 440,600,60
+	local cardy = 310
 	if user.uid ==  USER.uid then
-		xx,yy,height = 700,600,80
+		xx,yy,height = 700,700,80
 		self.myinfo:setVisible(true)
 		self.otherinfo:setVisible(false)
 		text = self.myinfo.text
 		textIcon = self.myinfo.textIcon
 		bg = self.myinfo
 		bg.pokerIcon:pos(xx-64,354)
+		cardy = 410
 	else
 		bg = self.otherinfo
 		self.myinfo:setVisible(false)
@@ -190,16 +196,27 @@ function UserInfo:show(user)
 	end
 	if user.best_cards then
 		for i,v in ipairs(user.best_cards) do
-			-- self.cards[i]:changeVal(v)
-			bg.cards[i]:setPosition(xx +40 + (i-1)*102, yy - 290)
+			bg.cards[i]:changeVal(v)
+			bg.cards[i]:setPosition(xx +40 + (i-1)*104, yy - cardy)
 		end
+	end
+	user.city = user.city or "神秘"
+	if user.city ==  "" then
+		user.city = "神秘"
+	end
+	local win = user.win_count / user.play_count
+	if user.play_count == 0 then 
+		win = 0
 	end
 	local textInfo = {user.uname , utils.numAbbr(user.uchips) , user.level,user.city,
 		utils.numAbbr(user.win_max) ,  utils.numAbbr(user.win_total) , 
-		user.win_count.."胜"..user.play_count.."局 / " .. user.win_count/user.play_count .."%胜率"}
+		user.win_count.."胜"..user.play_count.."局 - %" .. win .."胜率"}
 	for i,v in pairs(textInfo) do
 		if i == 5 then
         	yy = 530
+        	if user.uid ==  USER.uid then
+        		yy = 630
+        	end
         	xx = xx + 320
         end
 		text[i]:setString(v)
@@ -209,14 +226,14 @@ function UserInfo:show(user)
 		else
 			bg.sexIcon:pos(xx-64,yy)
 		end
-		yy = yy - 60
+		yy = yy - height
 	end
 	if user.sex ==1 then
 		bg.sexIcon:setSpriteFrame(cc.SpriteFrameCache:getInstance():getSpriteFrame("common/female.png"))
 	else
 		bg.sexIcon:setSpriteFrame(cc.SpriteFrameCache:getInstance():getSpriteFrame("common/male.png"))
 	end
-	
+	self:setVisible(true)
 end
 
 function UserInfo:hide()

@@ -2,12 +2,17 @@ local Card = class("Card",display.newNode)
 
 function Card:ctor(val, x, y, batchnode)
 	val = val or 0
+    self._value = val
     x,y = x or 0, y or 0
     self:setPosition(x,y)
-    self.value = val
+    if val == 0 then
+        self.value = 0
+    else
+        self.value = CONFIG.cards[val]
+    end
     self.line = display.newSprite("#card-hightline.png",0,1):addTo(self)
     if val > 0 then
-        self.face = display.newSprite("#card-".. CONFIG.cards[self.value]..".png"):addTo(self)
+        self.face = display.newSprite("#card-".. self.value..".png"):addTo(self)
     else
         self.face = display.newSprite("#cover.png"):addTo(self)
     end
@@ -17,18 +22,19 @@ end
 
 function Card:changeVal(val,quick)
     val = tonumber(val) or 0
-    self.value = val
+    self._value = val
     self:normal()
     if val == 0 or self._fliped then
+        self.value = 0
         self.face:setSpriteFrame(cc.SpriteFrameCache:getInstance():getSpriteFrame("cover.png"))
         self._fliped = false
         if val == 0 then
-        	return
+            return
         end
     end
-    -- dump("card-".. CONFIG.cards[self.value]..".png")
+    self.value = CONFIG.cards[val]
     if quick then
-    	self.face:setSpriteFrame(cc.SpriteFrameCache:getInstance():getSpriteFrame("card-".. CONFIG.cards[self.value]..".png"))
+    	self.face:setSpriteFrame(cc.SpriteFrameCache:getInstance():getSpriteFrame("card-"..self.value..".png"))
     else
         self:flip()
     end
@@ -43,7 +49,7 @@ function Card:flip()
     local action = transition.sequence({a1,a2})
     self:runAction(action)
     transition.moveTo(self.face,{time = 0.15,y = 18})
-    self._frame = cc.SpriteFrameCache:getInstance():getSpriteFrame("card-".. CONFIG.cards[self.value]..".png")
+    self._frame = cc.SpriteFrameCache:getInstance():getSpriteFrame("card-".. self.value..".png")
     self:performWithDelay(function()
         self.face:setSpriteFrame(self._frame)
     end,time)
@@ -51,9 +57,9 @@ function Card:flip()
 
     if self._showline then
         self.line:setVisible(false)
-        scheduler.setTimeout(function()
+        self:performWithDelay(function()
              self:showline()
-        end,0.5,self)
+        end,0.5)
     end
     self._fliped = true
 end
@@ -80,7 +86,6 @@ function Card:hideline()
     self._showline = false
     self.line:setVisible(false)
 end
-
 
 local function getCardVal( card )
     return card % 100
@@ -293,8 +298,8 @@ end
 
 -- TODO 为更精确计算牌型,应将公共牌和手牌单独传入计算
 function Card.calCard(cards,handcards)
-    cards = _t(cards)
-    handcards = _t(handcards)
+    cards = checktable(cards)
+    handcards = checktable(handcards)
     --从大到小排
     table.sort(cards,function(a,b)
         return a>b
@@ -402,5 +407,17 @@ function Card.getCardType(cards)
     local r = Card.calCard(cards)
     return r.type,r.hCard
 end
+
+-- --牌型
+Card.HIGH_CARD = 1          -- 高牌
+Card.PAIR = 2               -- 一对
+Card.TOW_PAIRS = 3          -- 两对
+Card.THREE_KIND = 4         -- 三条
+Card.STRAIGHT = 5           -- 顺子
+Card.FLUSH = 6              -- 同花
+Card.FULL_HOUSE = 7         -- 葫芦
+Card.FOUR_KIND = 8          -- 四条
+Card.STRAIGHT_FLUSH = 9    -- 同花顺
+Card.ROYAL_FLUSH = 10       -- 皇家同花顺
 
 return Card

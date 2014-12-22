@@ -2,6 +2,7 @@ local HallMenu  =  class("HallMenu",display.newNode)
 
 function HallMenu:ctor()
 	SocketEvent:addEventListener(CMD.RSP_IN_TABLE .. "back", function(event)
+        self:exit()
         _.Hall:exit()
         _.Room = Room.new()
         _.Room:initRoomWithData(event.data)
@@ -9,6 +10,7 @@ function HallMenu:ctor()
     end)
 
     SocketEvent:addEventListener(CMD.RSP_SCENES_LIST .. "back", function(event)
+        self:exit()
         _.Hall:exit()
         _.SelectRoom = SelectRoom.new()
         display.replaceScene(_.SelectRoom)
@@ -33,11 +35,30 @@ function HallMenu:ctor()
                 end)
                 :onButtonClicked(self:toGame())
                 :addTo(self)
+    cc.ui.UIPushButton.new("#hall/shop.png")
+                :pos(display.cx ,70)
+                :onButtonPressed(function(event)
+                    -- sprite:runAction(cc.TintBy:create(0,-128,-128,-128))
+                end)
+                :onButtonRelease(function(event)
+                    -- sprite:runAction(cc.TintBy:create(0,255,255,255))
+                end)
+                :onButtonClicked(function ( )
+                    utils.playSound("click")
+                    if not _.MyStore then
+                        _.MyStore = MyStore.new()
+                        self:addChild(_.MyStore)
+                    end
+                    _.MyStore:show()
+                end)
+                :addTo(self)
+
 end
 
 
 function HallMenu:toSelectTable()
 	return function ( event )
+        utils.playSound("click")
         -- if CONFIG.selectRoom then
         --     _.SelectRoom = SelectRoom.new()
         --     display.replaceScene(_.SelectRoom)
@@ -49,14 +70,15 @@ end
 
 function HallMenu:toGame()
 	return function ( event )
-        -- dump("in table")
+        utils.playSound("click")
         SendCMD:toGame(2)
 	end
 end
 
 function HallMenu:exit( ... )
-    SocketEvent:removeEventListenersByEvent(CMD.RSP_IN_TABLE .. "back")
     SocketEvent:removeEventListenersByEvent(CMD.RSP_SCENES_LIST .. "back")
+    SocketEvent:removeEventListenersByEvent(CMD.RSP_IN_TABLE .. "back")
+    
 end
 
 return HallMenu

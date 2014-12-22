@@ -9,11 +9,18 @@ function MyApp:ctor()
 end
 
 function MyApp:run()
-	if device.platform == "android" then
-	    luaj = require(cc.PACKAGE_NAME .. ".luaj")
-	elseif device.platform == "ios" then
-	    luaoc = require(cc.PACKAGE_NAME .. ".luaoc")
-	end
+	-- if device.platform == "android" then
+	--     luaj = require(cc.PACKAGE_NAME .. ".luaj")
+	-- elseif device.platform == "ios" then
+	--     luaoc = require(cc.PACKAGE_NAME .. ".luaoc")
+	-- end
+
+   
+
+    -- device.deviceID = "2014-16-20-14:16:07-5433569"
+
+    -- device.deviceID = "2014-01-19-19:01:57-62151587"
+
     cc.FileUtils:getInstance():addSearchPath("res/")
     display.addSpriteFrames("img/common.plist","img/common.png")
     display.addSpriteFrames("img/poker.plist","img/poker.png")
@@ -36,21 +43,34 @@ function MyApp:run()
 
     LANG            = require("app.tools.lang")
 
+    Store = require("framework.cc.sdk.Store")
+
     _.ParseSocket = ParseSocket.new()
     
--- self:enterScene("SelectRoom")
--- 
--- self:enterScene("Hall")
+    -- self:enterScene("SelectRoom")
+    _.Loading = Loading:new()
+    display.replaceScene(_.Loading)
+    -- self:enterScene("Hall")
 
-    -- self:enterScene("Login")
     SocketEvent:addEventListener(CMD.RSP_GAME_SERVER .. "back", function(event)
+        if _.Loading then
+            _.Loading:hide()
+        end
         _.Hall = Hall.new()
         display.replaceScene(_.Hall)
-        -- self:enterScene("Hall")
         SocketEvent:removeEventListenersByEvent(CMD.RSP_GAME_SERVER .. "back")
+        SendCMD:getShoplist()
+        MyStore.initStore()
+        SocketEvent:addEventListener(CMD.RSP_SHOPLIST .. "back", function(event)
+            SocketEvent:removeEventListenersByEvent(CMD.RSP_SHOPLIST .. "back")
+            MyStore.products = {}
+            MyStore.data = event.data
+            MyStore.loadProducts(MyStore.data)
+        end)
+        
     end)
-
     
+
 end
 
 return MyApp

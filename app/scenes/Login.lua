@@ -11,6 +11,9 @@ function Login:ctor()
 	display.addSpriteFrames("img/login.plist","img/login.png")
 	local bg = display.newSprite("img/login-bg.png",display.cx,display.cy)
 	:addTo(self)
+	if display.height > 960 then
+        bg:setScale(display.height/960)
+    end
 	
 	display.newSprite("#login/account.png",display.cx + 270,display.top - 70)
 	:addTo(self)
@@ -98,7 +101,7 @@ function Login:ctor()
 	            			err:setString("您输入的密码长度不对哦！")
 	            			return
 	            		end
-	                    SendCMD:login(acc,pwd,0)
+	                    SendCMD:login(acc,pwd,2)
 
 	              --       local params = {user_name = acc,accout_type = 2,user_pwd = pwd,source = CONFIG.appName
 	              --       platform ＝ device.platform == "ios" and 1 or 2,game_id = CONFIG.gameId}
@@ -187,9 +190,10 @@ function Login:ctor()
 	                    -- sprite:runAction(cc.TintBy:create(0,255,255,255))
 	            end)
 	            :onButtonClicked(function (event)
-	                    dump(i)
-	                    _.MyStore = MyStore.new()
-	                    self:addChild(_.MyStore)
+	                    if not _.MyStore then
+		                    _.MyStore = MyStore.new()
+		                    self:addChild(_.MyStore)
+		                end
 	                    _.MyStore:show()
 	                    -- self:addChild(MyStore.new())
 	            end)
