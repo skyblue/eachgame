@@ -27,8 +27,8 @@ function Room:ctor()
     if display.height > 960 then
         bg:setScale(display.height/960)
     end
-    display.newSprite("#room/heguan.png",display.cx,display.cy + display.cy * 0.72)
-    :addTo(self)
+    -- display.newSprite("#room/heguan.png",display.cx,display.cy + display.cy * 0.72)
+    -- :addTo(self)
 	_.Event = Event.new()  
 	self:initPublicCard()
     self:initDealer()
@@ -146,7 +146,7 @@ end
 
 function Room:initPot()
     local pot = Pot.new(self.model)
-    pot:setPosition(display.cx,display.height * 0.68)
+    pot:setPosition(display.cx,display.height * 0.66)
     self:addChild(pot)
     self.parts["pot"] = pot
     -- pot:changeVal()
@@ -222,6 +222,11 @@ function Room:onSeatTap(seat)
                 SendCMD:getUserInfo(seat.model.uid)
 		        return
 		    else
+                dump("-----------")
+                dump("-----------")
+                dump("-----------")
+                dump("-----------")
+                dump(checkint(USER.seatid))
                 if checkint(USER.seatid) > 0 then return end
 		        --发送socket
                 SendCMD:userSit(seat.model.id,self.model.min_buying,1)

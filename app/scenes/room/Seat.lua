@@ -69,7 +69,7 @@ function Seat:ctor(id,maxPlayer,gap_sec)
     local frames = display.newFrames("room/win%1d.png", 1, 2)
     display.setAnimationCache("anim_win", display.newAnimation(frames, 1.5 / 12))
     self.parts["anim_win"] = display.newSprite()
-        :addTo(self)
+        :addTo(self,20)
         
 	local buying = cc.ui.UILabel.new({
 		UILabelType = 2,
@@ -83,7 +83,6 @@ function Seat:ctor(id,maxPlayer,gap_sec)
 	self.parts["buying"] = buying
 	self:initSmallCard()
 	self:initHandCard()
-
 end
 
 function Seat:initHead( gap_sec)
@@ -114,30 +113,9 @@ function Seat:changeChipin(val)
 end
 
 function Seat:changePic(pic_path)
-    -- if not pic_path or pic_path == "" then
-    --     pic_path = self.model.usex == 0 and "img/f.png" or "img/m.png"
-    --     dump(pic_path)
-    --     local frame = display.newSpriteFrame(pic_path)
-    --     dump(frame)
-    --     -- self.parts["head"].pic:setSpriteFrame(frame)
-    --     return
-    -- end
-	utils:loadRemote(self.parts["head"].pic,pic_path, function(succ, texture, sprite)
-        if not succ then return end
-            scheduler.performWithDelayGlobal(function()
-                if not sprite or tolua.isnull(sprite) then return end
-                local opacity = sprite:getOpacity()
-                opacity = opacity or 255
-                sprite:setOpacity(255)
-                sprite:setTexture(texture)
-                sprite:stopAllActions()
-                sprite:setOpacity(20)
-                transition.fadeTo(sprite,{
-                    time = 0.2,
-                    opacity = opacity
-                })
-        end, 0.5)
-    end)
+    if #self.model.upic > 0 then
+    	utils.loadRemote(self.parts["head"].pic,pic_path)
+    end
 end
 
 function Seat:initHandCard()
@@ -446,6 +424,20 @@ function Seat:stopChipin()
         self.parts["clock"]:setVisible(false)
         self.parts["clock"]:stop()
     end
+end
+
+function Seat:animation(id)
+    self.parts["anim_win"]:setVisible(true)
+    local ids = {13,13,11,10,11}
+    if not  display.getAnimationCache("interact_anim_"..id) then
+        local frames = display.newFrames("room/animation/"..id.."%02d.png", 1, ids[id])
+        display.setAnimationCache("interact_anim_"..id, display.newAnimation(frames, 1.5 / 12))
+    end
+
+    self.parts["anim_win"]:playAnimationOnce(display.getAnimationCache("interact_anim_"..id),false,function (  )
+        self.parts["anim_win"]:stopAllActions()
+        self.parts["anim_win"]:setVisible(false)
+    end)
 end
 
 return Seat

@@ -10,7 +10,7 @@ function RoomMenu:ctor()
     end)
 
     
-    cc.ui.UIPushButton.new("#room/xiangxiajiantou.png")
+    cc.ui.UIPushButton.new("#room/menu.png")
             :pos(81,display.top - 81)
             :onButtonPressed(function(event)
                     -- sprite:runAction(cc.TintBy:create(0,-128,-128,-128))
@@ -24,7 +24,7 @@ function RoomMenu:ctor()
                 self.parts["menus"]:setVisible(true)
             end)
             :addTo(self)
-    cc.ui.UIPushButton.new("#room/libao.png")
+    cc.ui.UIPushButton.new("#room/shop.png")
             :pos(display.width - 81,display.top - 81)
             :onButtonPressed(function(event)
                     -- sprite:runAction(cc.TintBy:create(0,-128,-128,-128))
@@ -43,9 +43,9 @@ function RoomMenu:ctor()
     local menuBg = display.newSprite("#room/menu-bg.png")
             :pos(196,display.top - 260)
             :addTo(self)
-    local menuText = {"返回大厅","重新换桌","立刻站起","暂时离开","游戏设置"}
+    local menuText = {"返回","换桌","站起"}
      menuText = {"返回大厅","重新换桌","立刻站起"}
-    local menuImg = {"xialaxiang-fanhui","xialaxiang-huanzhuo","xialaxiang-zhanqi","xialaxiang-zhanqi","seting"}
+    local menuImg = {"return","change-table","stand"}
     for k,v in pairs(menuText) do
         cc.ui.UIPushButton.new("#room/"..menuImg[k]..".png")
             :setButtonLabel(cc.ui.UILabel.new({
@@ -58,7 +58,7 @@ function RoomMenu:ctor()
                     })
                     )
             :setButtonLabelOffset(44,0)
-            :pos(80, 424 + (k-1) * - 90)
+            :pos(80, 350 + (k-1) * - 90)
             :onButtonPressed(function(event)
                     -- sprite:runAction(cc.TintBy:create(0,-128,-128,-128))
             end)
@@ -66,6 +66,7 @@ function RoomMenu:ctor()
                     -- sprite:runAction(cc.TintBy:create(0,255,255,255))
             end)
             :onButtonClicked(function (event)
+                    self:setTouchEnabled(false)
                     self.parts["menus"]:setVisible(false)
                     utils.playSound("click")
                     self["fun"..k]()
@@ -87,8 +88,8 @@ function RoomMenu:ctor()
                 align = cc.ui.TEXT_ALIGN_LEFT,
                 })
     :addTo(input)
-    input:setVisible(false)
-    cc.ui.UIPushButton.new("#room/xiaoxi.png")
+    -- input:setVisible(false)
+    cc.ui.UIPushButton.new("#room/msg.png")
                 -- :setButtonSize(360, 104)
                 -- :setButtonLabel(cc.ui.UILabel.new({text = "全下", size = 40, font = "Helvetica-Bold"}))
                 :pos( 50 ,60)
@@ -101,14 +102,14 @@ function RoomMenu:ctor()
                 :onButtonClicked(function(event)
                     if not _.Chat then
                         _.Chat = Chat.new()
-                        self:addChild(_.Chat)
+                        display.getRunningScene():addChild(_.Chat,20)
                     else
                         _.Chat:show()
                     end
                 end)
                 :addTo(input)
-                :setVisible(false)
-   cc.ui.UIPushButton.new("#room/xialaxiang-paixing.png")
+                -- :setVisible(false)
+   cc.ui.UIPushButton.new("#room/cardtype.png")
                 -- :setButtonSize(360, 104)
                 -- :setButtonLabel(cc.ui.UILabel.new({text = "全下", size = 40, font = "Helvetica-Bold"}))
                 :pos( 60 ,160)
@@ -124,32 +125,39 @@ function RoomMenu:ctor()
                 :addTo(self)
                 :setVisible(false)
 
-    SocketEvent:addEventListener(ROOM_CMD.NTF_START_ACTION .. "back", function(event)
-
-    end)
+    -- cc.ui.UIPushButton.new("#room/cardtype.png")
+    --             :pos( 60 ,160)
+    --             :onButtonClicked(function(event)
+    --                 display:getRunningScene():addChild(require("app.scenes.room.MinMission").new())
+    --             end)
+    --             :addTo(self)
+    
 end
 
-function RoomMenu:fun1()
+local function check(data,callback)
     local status = 10
     if checkint(USER.seatid) > 0 then
         status = _.Room.parts["seats"][USER.seatid].model.status
     end
     if status ~= 10 and status ~= 1 then
-       utils.dialog("", "确认退出牌桌?",{"立刻退出", "本局结束后"}, function(e)
-        -- utils.dialog("", "确认退出牌桌?",{"立刻退出", "取消"}, function(e)
+       utils.dialog(data.title, data.msg,data.btns, function(e)
             if e.buttonIndex == 1 then
-                SendCMD:outTable(1)
-            elseif e.buttonIndex == 2 then
-                SendCMD:outTable(2)
+                callback()
             end
         end)
     else
-        SendCMD:outTable(1)
+        callback()
     end
+
 end
 
-function changeTable( )
-    
+function RoomMenu:fun1()
+    check({title = "", msg = "确认退出牌桌?",btns = {"立刻退出", "继续游戏"}},function ()
+        SendCMD:outTable(1)
+    end)
+end
+
+local function changeTable( )
     _.Room:exit()
     _.Loading = Loading:new()
     display.replaceScene(_.Loading)
@@ -167,34 +175,21 @@ function changeTable( )
 end
 
 function RoomMenu:fun2()
-    -- if status ~= 10 and status ~= 1 then
-    --    utils.dialog("", "确认换个牌桌?",{"立刻换桌", "取消"}, function(e)
-    --        if e.buttonIndex == 2 then
-    --             self:changeTable()
-    --         end
-    --     end)
-    -- else
-        changeTable()
-    -- end
-    
+    if not _.UserInfo then
+        _.UserInfo = UserInfo.new(U)
+        display:getRunningScene():addChild(_.UserInfo)
+    end
+    _.UserInfo:show(USER)
+    -- check({title = "", msg = "确认换个牌桌?",btns = {"确定", "继续游戏"}},function ()
+    --     changeTable()
+    -- end)
 end
 
 
 function RoomMenu:fun3()
-    SendCMD:userStand(1)
-end
-
-function RoomMenu:fun4()
-    -- if status ~= 10 and status ~= 1 then
-    --    utils.dialog("", "您还在牌局中，确认立刻站起?",{"立刻站起", "取消"}, function(e)
-    --        if e.buttonIndex == 2 then
-    --             SendCMD:userStand(2)
-    --         end
-    --     end)
-    -- else
-        SendCMD:userStand(2)
-    -- end
-    
+    check({title = "", msg = "确认站起观看?",btns = {"确定", "继续游戏"}},function ()
+        SendCMD:userStand(1)
+    end)
 end
 
 return RoomMenu

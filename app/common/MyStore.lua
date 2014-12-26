@@ -3,18 +3,81 @@ MyStore = class("MyStore",display.newNode)
 local UIScrollView = require("framework.cc.ui.UIScrollView")
 
 function MyStore:ctor()
-   
-	
-    -- self:initStore()
-    -- self:init()
+    
+    self.title = {"商城","兑换"}
+    SocketEvent:addEventListener(CMD.RSP_SHOPLIST .. "back", function(event)
+        SocketEvent:removeEventListenersByEvent(CMD.RSP_SHOPLIST .. "back")
+        self:init()
+    end)
+    self:addNodeEventListener(cc.NODE_TOUCH_EVENT,self:onTouch())
+    self:setContentSize(display.width,display.height)
+end
+
+function MyStore:onTouch()
+    local layer = self
+    return function(event)
+            self:hide()
+        return true
+    end
+end
+
+function MyStore:show()
+    if not self.load then
+        self:init()
+    end
+    self.mask:setVisible(true)
+    self:setVisible(true)
+    self.bg:setScale(0.4)
+    transition.scaleTo(self.bg,{
+        time   = 0.25,
+        scale  = 1,
+        easing = "BACKOUT"
+    })
+    self:setTouchEnabled(true)
+end
+
+function MyStore:hide()
+    self:setTouchEnabled(false)
+    transition.scaleTo(self.bg,{
+        time = 0.2,
+        scale = 0,
+        easing = "BACKIN",
+        onComplete = function(  )
+            self.mask:setVisible(false)
+            self:setVisible(false)
+        end
+    })
 end
 
 function MyStore:init()
     if MyStore.data then
+    -- MyStore.data = {{chips = 100000,addChips = 10000,unit = "￥",money = 20,proid ="com.eg.texas.c6"},
+    --     {chips = 100000,addChips = 10000,unit = "￥",money = 20,proid ="com.eg.texas.c6"},
+    --     {chips = 100000,addChips = 10000,unit = "￥",money = 20,proid ="com.eg.texas.c6"},
+    --     {chips = 100000,addChips = 10000,unit = "￥",money = 20,proid ="com.eg.texas.c6"},
+    --     {chips = 100000,addChips = 10000,unit = "￥",money = 20,proid ="com.eg.texas.c6"},
+    --     {chips = 100000,addChips = 10000,unit = "￥",money = 20,proid ="com.eg.texas.c6"},
+    --     {chips = 100000,addChips = 10000,unit = "￥",money = 20,proid ="com.eg.texas.c6"},
+    --     {chips = 100000,addChips = 10000,unit = "￥",money = 20,proid ="com.eg.texas.c6"},
+    --     {chips = 100000,addChips = 10000,unit = "￥",money = 20,proid ="com.eg.texas.c6"},
+    --     {chips = 100000,addChips = 10000,unit = "￥",money = 20,proid ="com.eg.texas.c6"},
+    --     {chips = 100000,addChips = 10000,unit = "￥",money = 20,proid ="com.eg.texas.c6"},
+    --     {chips = 100000,addChips = 10000,unit = "￥",money = 20,proid ="com.eg.texas.c6"},
+    --     {chips = 100000,addChips = 10000,unit = "￥",money = 20,proid ="com.eg.texas.c6"}}   
+
+
+        local mask = display.newColorLayer(cc.c4b(0,0,0,0))
+            :addTo(self)
+        mask:setContentSize(display.width,display.height)
+        mask:setOpacity(190)
+        mask:setTouchEnabled(false)
+        self.mask =  mask
         local bg = display.newSprite("img/myinfo-bg.png",display.cx,display.cy)
-        :addTo(self)
+            :addTo(self)
+        self.bg = bg
+
         cc.ui.UIPushButton.new("#common/close_icon.png")
-            :align(display.CENTER,bg:getContentSize().width-150,bg:getContentSize().height-92)
+            :align(display.CENTER,bg:getContentSize().width,bg:getContentSize().height)
             :onButtonPressed(function(event)
                     -- sprite:runAction(cc.TintBy:create(0,-128,-128,-128))
             end)
@@ -27,12 +90,13 @@ function MyStore:init()
             end)
             :addTo(bg)
         self.list = cc.ui.UIListView.new {
-            viewRect = cc.rect(30,60, 1600, 680),
+            viewRect = cc.rect(0,0, bg:getContentSize().width, bg:getContentSize().height-120),
             direction = cc.ui.UIScrollView.DIRECTION_VERTICAL,
             }
         :addTo(bg)
-        cc.ui.UILabel.new({text = "商城" , size = 60})
-                :align(display.CENTER,display.cx,bg:getContentSize().height-120)
+        local xx,yy = bg:getContentSize().width/2,bg:getContentSize().height/2
+        cc.ui.UILabel.new({text = self.title[1] , size = 60})
+                :align(display.CENTER,xx,bg:getContentSize().height-40)
                 :addTo(bg)
         local height,item,line,content = 100
         for k,v in pairs(MyStore.data) do
@@ -41,19 +105,19 @@ function MyStore:init()
                 -- :pos(bg:getContentSize().width/2,yy)
             line = display.newSprite("#common/line.png",0,height/2)
                 :addTo(content)
-            line:setScaleX(1.5)
-            display.newSprite("#chip-blue.png",-bg:getContentSize().width/2 +200,0)
+            line:setScaleX(1.2)
+            display.newSprite("#chip-blue.png",-xx + 60,0)
                 :addTo(content)
             cc.ui.UILabel.new({text = utils.numAbbr(v.chips).."筹码(赠".. utils.numAbbr(v.addChips) .. ")" , size = 40})
-                :align(display.CENTER,-200,0)
+                :align(display.CENTER,-300,0)
                 :addTo(content)
             cc.ui.UILabel.new({text = "实得：".. utils.numAbbr(v.addChips+v.chips) , size = 40})
-                :align(display.CENTER,200,0)
+                :align(display.CENTER,100,0)
                 :addTo(content)
             cc.ui.UIPushButton.new("#common/green-btn.png",{scale9 = true})
                 :setButtonSize(226, 82)
                 :setButtonLabel(cc.ui.UILabel.new({text = v.unit..v.money.." 购买", size = 40, font = "Helvetica-Bold"}))
-                :align(display.CENTER,560,0)
+                :align(display.CENTER,460,0)
                 :onButtonPressed(function(event)
                         -- sprite:runAction(cc.TintBy:create(0,-128,-128,-128))
                 end)
@@ -74,19 +138,10 @@ function MyStore:init()
     else 
         SendCMD:getShoplist()
     end
-    self:hide()
-end
-
-function MyStore:hide()
     self:setVisible(false)
 end
 
-function MyStore:show()
-    if not self.load then
-        self:init()
-    end
-    self:setVisible(true)
-end
+
 
 function MyStore.loadProducts(data)
     local productIds = {}

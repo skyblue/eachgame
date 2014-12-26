@@ -47,9 +47,9 @@ function MyApp:run()
 
     _.ParseSocket = ParseSocket.new()
     
-    -- self:enterScene("SelectRoom")
     _.Loading = Loading:new()
     display.replaceScene(_.Loading)
+    -- self:enterScene("Room")
     -- self:enterScene("Hall")
 
     SocketEvent:addEventListener(CMD.RSP_GAME_SERVER .. "back", function(event)
@@ -59,6 +59,10 @@ function MyApp:run()
         _.Hall = Hall.new()
         display.replaceScene(_.Hall)
         SocketEvent:removeEventListenersByEvent(CMD.RSP_GAME_SERVER .. "back")
+        if checkint(USER.tid) > 0 then
+            SendCMD.toGame(USER.tid)
+        end
+
         SendCMD:getShoplist()
         MyStore.initStore()
         SocketEvent:addEventListener(CMD.RSP_SHOPLIST .. "back", function(event)

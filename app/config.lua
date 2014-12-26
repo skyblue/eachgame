@@ -43,12 +43,12 @@ CONFIG={
 	ORIGIN_API_URL = "http://192.168.1.109/pokerp/api/flashapi.php",
 	BACKUP_API_URL = "http://192.168.1.109/pokerp/api/flashapi.php",
 	useBackupApi = "false",
-	server = "192.168.1.11",
+	server = "192.168.1.175",
 	-- server = "texas.eachgame.com",
 	port = "3050",
 	-- server = "192.168.1.34",
 	-- port = "9501",
-	gameServer = "192.168.1.11",
+	gameServer = "192.168.1.175",
 	-- gameServer = "texas.eachgame.com",
 	gamePort = "3050",
 
@@ -79,8 +79,18 @@ CONFIG={
 }
 
 USER ={
+	uid = 0,
 	sessionkey = "",
 	testKey = "E84B2EF4602533858G49FB57F7ID222B",
+	uname = "test",
+	uchips = "9999",
+	win_count = 0,
+	play_count = 0,
+	win_max = 0,
+	win_total= 0,
+	city = "神秘",
+	level = 20,
+	best_cards = {0,0,0,0,0}
 }
 
 CMD = {
@@ -149,6 +159,10 @@ ROOM_CMD = {
 	REQ_OUT_TABLE = 2201,
 	RSP_OUT_TABLE =2202,
 	NTF_OUT_TABLE =2104,
+
+	REQ_ANIMATION = 2660,
+	RSP_ANIMATION = 2661,
+	NTF_ANIMATION = 2661,
 }
 
 CON__USER_NONE 	= 0;--无动作

@@ -115,7 +115,23 @@ function ParseSocket:ctor()
 	self.fun["fun"..ROOM_CMD.RSP_OUT_TABLE] = self.outTable
 	self.fun["fun"..ROOM_CMD.NTF_OUT_TABLE] = self.outTableNtf
 	self.fun["fun"..ROOM_CMD.NTF_USER_ENTER] = self.userEnter
+	self.fun["fun"..ROOM_CMD.NTF_ANIMATION] = self.animation
+	self.fun["fun"..ROOM_CMD.RSP_ANIMATION] = self.animationFailure
 
+end
+
+function ParseSocket:animationFailure(packet)
+	local flag = packet:readChar()
+	if flag ~= 0 then
+		utils.dialog("", LANG["RSP_ANIMATION_"..flag],{"确定"})
+	end
+end
+
+function ParseSocket:animation(packet)
+	local uid = packet:readInt()
+	local pid = packet:readShort()
+	local seatid = packet:readChar()
+	SocketEvent:dispatchEvent({name = ROOM_CMD.NTF_ANIMATION .. "back",data = {uid =uid,pid = pid,seatid =  seatid}})
 end
 
 function ParseSocket:completeMission(packet)
@@ -169,17 +185,31 @@ function ParseSocket:userEnter(packet)
 end
 
 function ParseSocket:changeSex(packet)
-
+	local flag = packet:readChar()
+	if flag == 0 then
+		USER.sex = packet:readChar()
+	else
+		utils.dialog("", LANG["RSP_CHANGE_SEX_"..flag],{"确定"})
+	end
+	SocketEvent:dispatchEvent({name = CMD.RSP_CHANGE_SEX .. "back"})
 end
 
 function ParseSocket:changePic(packet)
-
+	local flag = packet:readChar()
+	if flag == 0 then
+		USER.upic = packet:readString()
+	else
+		utils.dialog("", LANG["RSP_CHANGE_PIC_"..flag],{"确定"})
+	end
+	SocketEvent:dispatchEvent({name = CMD.RSP_CHANGE_PIC .. "back"})
 end
 
 function ParseSocket:changeUname(packet)
 	local flag = packet:readChar()
+	dump(flag)
 	if flag == 0 then
 		USER.uname = packet:readString()
+		dump(USER.uname)
 	else
 		utils.dialog("", LANG["RSP_CHANGE_UNAME_"..flag],{"确定"})
 	end
@@ -507,7 +537,7 @@ function ParseSocket:loginSuccess(packet)
 		CONFIG.blockedSecs = packet:readInt()
 		USER.sessionkey = packet:readInt()
 
-		CONFIG.gameSever = packet:readString()
+		CONFIG.gameServer = packet:readString()
 		CONFIG.gamePort = packet:readShort()
 		CONFIG.httpServer = packet:readString()
 		self.contentType = 2
@@ -525,6 +555,7 @@ function ParseSocket:userInfo(packet)
 		local data = self:readUserInfo(packet)
 		data.tid = packet:readInt()
 		data.online = packet:readChar() -- 1 online -- 0 offline
+		-- data.seatid = packet:readShort()
 		if _.UserInfo == nil or tolua.isnull(_.UserInfo) then 
 			_.UserInfo = UserInfo.new():addTo(display.getRunningScene(),30)
 		end
@@ -579,10 +610,7 @@ function ParseSocket:loginToGameSuccess(packet)
 		local data = self:readUserInfo(packet)
 		utils.__merge(USER,data)
 		CONFIG.serverTime = packet:readInt()
-		dump(CONFIG.serverTime)
-		dump(os.time())
 		CONFIG.clinet_diftime = CONFIG.serverTime  - os.time()
-		dump(CONFIG.clinet_diftime)
 		-------当前游戏局会话信息 
 		flag = packet:readChar()  --是否读取本字段
 		if flag == 1 then 

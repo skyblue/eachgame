@@ -320,7 +320,13 @@ function Event:init(room)
 
 	end)
 
-
+	SocketEvent:addEventListener(ROOM_CMD.NTF_ANIMATION .. "back", function(event)
+    	local data = event.data
+		dump(data)
+		if data.uid ==  seats[data.seatid].model.uid then
+			seats[data.seatid]:animation(data.pid)
+		end
+    end)
 end
 
 function Event:clearDelay()
@@ -340,6 +346,7 @@ end
 
 function Event:exit()
     self:clearDelay()
+    SocketEvent:removeEventListenersByEvent(ROOM_CMD.NTF_ANIMATION .. "back")
 	SocketEvent:removeEventListenersByEvent(ROOM_CMD.RSP_HAND_CARDS .. "back")
 	SocketEvent:removeEventListenersByEvent(ROOM_CMD.NTF_USER_SIT .. "back")
 	SocketEvent:removeEventListenersByEvent(ROOM_CMD.NTF_START_ACTION .. "back")

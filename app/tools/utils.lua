@@ -563,31 +563,38 @@ function utils.makeAvatar(data)
     udata           = checktable(data.udata)
     udata.upic      = udata.upic or ""
     size            = data.size or cc.size(156, 132)
-    callback        = data.callback
     mask_choose     = data.mask_choose or 0
-    border          = data.border or false
-    -- udata.upic="http://tp3.sinaimg.cn/1784125122/180/5597936572/0"
-    -- udata.upic= "http://picture.youth.cn/qtdb/201412/W020141218231775592472.jpg"
-    -- udata.upic="http://upic.yiihua.com/0000/1001.jpg"
-    -- udata.upic = "http://img1.touxiang.cn/uploads/20120509/09-014358_953.jpg"
-    -- udata.upic = "http://d.lanrentuku.com/down/png/1406/little_animal_64x64/little_animal_25.png"
-    -- udata.upic = "http://d.lanrentuku.com/down/png/1406/kulouwenhua.jpg"
+    callback        = data.callback or function(succ, texture, sprite)
+            if not succ then return end
+                scheduler.performWithDelayGlobal(function()
+                    if not sprite or tolua.isnull(sprite) then return end
+                    local opacity = sprite:getOpacity()
+                    opacity = opacity or 255
+                    sprite:setOpacity(255)
+                    sprite:setTexture(texture)
+                    sprite:stopAllActions()
+                    sprite:setOpacity(20)
+                    transition.fadeTo(sprite,{
+                        time = 0.2,
+                        opacity = opacity
+                    })
+            end, 0.5)
+        end
     local head  = display.newNode()
     head._size  = size
     head:setContentSize(size)
     head:align(display.CENTER)
-    if border then
-        head.border = display.newSprite(border, size.width/2, size.height/2)
+    if data.border then
+        head.border = display.newSprite(data.border, size.width/2, size.height/2)
         :addTo(head,10)
     end
     local pic,def_pic
     def_pic = udata.usex == 0 and "img/f.png" or "img/m.png"
     pic = display.newSprite(def_pic)
+
     local maskPic = "#common/head-mask.png"
-    if mask_choose == 1 then
+    if mask_choose ==  1 then
         maskPic = "#common/head-mask1.png"
-    elseif mask_choose == 2 then
-        maskPic = "#common/head-mask-circle.png"
     end
     local mask    = display.newSprite(maskPic);
     local avatar  = cc.ClippingNode:create(mask)
@@ -596,20 +603,19 @@ function utils.makeAvatar(data)
     avatar:addChild(pic)
     head:addChild(avatar)
     head.pic = pic
-    -- avatar.pic = pic
     head.avatar = avatar
-    head.border = border
+    -- head.border:setScale(size.width/head.border:getContentSize().width)
     if pic:getContentSize().width < size.width then
         pic:setScale(size.width/pic:getContentSize().width)
     end
     mask:setScale(size.width/mask:getContentSize().width)
     if def_pic ~= udata.upic then
-        utils:loadRemote(pic,udata.upic, callback)
+        utils.loadRemote(pic,udata.upic, callback)
     end
     return  head, pic
 end
 
-function utils:loadRemote(sprite,url, callback)
+function utils.loadRemote(sprite,url, callback)
     if not CONFIG.uploadPic then
         return
     end
@@ -636,9 +642,9 @@ function utils:loadRemote(sprite,url, callback)
     if texture  and not tolua.isnull(texture)  and tolua.type(texture) == "cc.Texture2D" then
         if type(callback) == "function" then
             callback(true, texture, sprite, true)
-        else
-            sprite:setTexture(texture)
-            transition.fadeIn(sprite,{time = .1})
+        -- else
+        --     sprite:setTexture(texture)
+        --     transition.fadeIn(sprite,{time = .1})
         end
         return sprite
     end

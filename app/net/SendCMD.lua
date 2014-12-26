@@ -31,6 +31,7 @@ end
 function SendCMD:changeUname(uname)
     local packet = ByteArray.new()
     packet:Begin(CMD.REQ_CHANGE_UNAME)
+    dump(uname)
     packet:writeString(uname)
     packet:End()
     self.socket:send(packet)
@@ -210,7 +211,14 @@ function SendCMD:completeMission(id)
     self.socket:send(packet)
 end 
 
-
+function SendCMD:animation(seatid,pid)
+    local packet = ByteArray.new()
+    packet:Begin(ROOM_CMD.REQ_ANIMATION)
+    packet:writeInt(seatid)
+    packet:writeInt(pid)
+    packet:End()
+    self.socket:send(packet)
+end 
 
 
 

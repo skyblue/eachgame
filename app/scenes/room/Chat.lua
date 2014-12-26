@@ -167,14 +167,13 @@ end
 function Chat:initMsg(msg)
     msg = msg or {}
     self.list = cc.ui.UIListView.new {
-            -- viewRect = cc.rect(-display.cx + 20,530, display.width, 420),
             viewRect = cc.rect(0,530, display.width, 420),
-            direction = cc.ui.UIScrollView.DIRECTION_HORIZONTAL,
+            direction = cc.ui.UIScrollView.DIRECTION_VERTICAL,
             }
             :onTouch(handler(self, self.touchListener))
         :addTo(self)
-    msg = {"紫华仙子：田诚贱人","紫华仙子：有妹子还抢妹子","紫华仙子：天天只会泡妞","紫华仙子：子：脑壳里除了女人就子：脑壳里除了女人就是里除了女人就是屎紫华里除了女人就是屎紫华仙仙里除了女人就是屎紫华仙里除了女人就是屎紫华仙屎紫华仙子：脑壳里除了女人就是屎紫华仙子：脑壳里除了女人就是屎","只会泡妞","紫华仙子：子："}
-    -- msg =  {"紫华仙子：田诚贱人"}
+    -- msg = {"紫华仙子：田诚贱人","紫华仙子：有妹子还抢妹子","紫华仙子：天天只会泡妞","紫华仙子：子：脑壳里除了女人就子：脑壳里除了女人就是里除了女人就是屎紫华里除了女人就是屎紫华仙仙里除了女人就是屎紫华仙里除了女人就是屎紫华仙屎紫华仙子：脑壳里除了女人就是屎紫华仙子：脑壳里除了女人就是屎","只会泡妞","紫华仙子：子："}
+    msg =  {"紫华仙子：田诚"}
     local nameColor,msgColor,nilItemNum,height,item,name =  display.COLOR_WHITE,display.COLOR_WHITE,8 - #msg,50
     if msg.id and msg.id == 0 then
         nameColor = display.COLOR_RED
@@ -217,20 +216,20 @@ function Chat:initMsg(msg)
                     })
             :addTo(content)
         -- dump(text:getContentSize().height)
-        name:setPositionY(text:getContentSize().height/2)
-        text:setPositionY(text:getContentSize().height/2)
+        -- name:setPositionY(text:getContentSize().height/2)
+        -- text:setPositionY(text:getContentSize().height/2)
         item:addContent(content)
         item:setItemSize(display.width,text:getContentSize().height + 8)
         self.list:addItem(item)
 
     end
     self.list:reload()
-    SocketEvent:addEventListener(ROOM_CMD.NTF_GAME_START .. "back", handler(self, self.addNewMsg))
+    SocketEvent:addEventListener(CMD.CHAT_NTF .. "back", handler(self, self.addNewMsg))
 end
 
 function Chat:addNewMsg(event)
     local msg = event.data.msg
-    _.Room.parts["chatMsg"]:setString(msg)
+    -- _.Room.parts["chatMsg"]:setString(msg)
 end
 
 function Chat:show(  )

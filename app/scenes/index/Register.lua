@@ -3,78 +3,57 @@ local Register = class("Register",display.newNode)
 function Register:ctor()
 	self.data = {sex = 0}
 	self.parts = {}
-	local bg = display.newSprite("#common/userinfo-bg.png",display.cx,display.cy)
-	    :addTo(self)
-	self:setContentSize(display.width, display.height)
+	local bg = display.newSprite("img/myinfo-bg.png",display.cx,display.cy)
+        :addTo(self)
 	self:addNodeEventListener(cc.NODE_TOUCH_EVENT,function ( event )
 		if not bg:getCascadeBoundingBox():containsPoint(cc.p(event.x,event.y)) then
 			self:hide()
 		end
 	end)
 	self:setTouchEnabled(true)
-	bg:setScaleY(1.4)
-	bg:setScaleX(0.9)
-	
 	cc.ui.UILabel.new({text = "用户注册", size = 65, font = "Helvetica-Bold"})
-		:align(display.CENTER,display.cx ,display.height - 100)
-        :addTo(self)
+		:align(display.CENTER,bg:getContentSize().width/2 ,bg:getContentSize().height-70)
+        :addTo(bg)
 
 	cc.ui.UIPushButton.new("#common/close_icon.png")
-            :align(display.CENTER,bg:getContentSize().width+120,display.height-94)
-            :onButtonPressed(function(event)
-                    -- sprite:runAction(cc.TintBy:create(0,-128,-128,-128))
-            end)
-            :onButtonRelease(function(event)
-                    -- sprite:runAction(cc.TintBy:create(0,255,255,255))
-            end)
+            :pos(bg:getContentSize().width,bg:getContentSize().height)
             :onButtonClicked(function (event)
                     self:hide()
             end)
-            :addTo(self)
+            :addTo(bg)
 
 
     local lables = {"手机号","昵称","密码","验证码","性别"}
     local items = {"acc","nickname","pwd","sign"}
     local input
-    local xx,yy,size = 300 ,display.height - 240,cc.size(491,95)
+    local yy =  bg:getContentSize().height - 186
     local err = cc.ui.UILabel.new({
             UILabelType = 2,
             text = "",
             size = 30,
             color = cc.c3b(255,0,0),
             })
-            :align(display.CENTER,display.cx,display.height-170)
-            :addTo(self)
+            :align(display.CENTER,bg:getContentSize().width/2,bg:getContentSize().height-130)
+            :addTo(bg)
     for i,v in ipairs(lables) do
-    	-- cc.ui.UILabel.new({
-     --        UILabelType = 2,
-     --        text = lables[i],
-     --        size = 45,
-     --        font = "Helvetica-Bold",
-     --        color = cc.c3b(254,221,70),
-     --        })
-     --        :align(display.LEFT_CENTER,xx,yy)
-     --        :addTo(self)
         if i == 4 then
-        	size = cc.size(246,95)
         	input = cc.ui.UIInput.new({
-	    		image = "#login/input.png",
-	    		x = display.cx - 120,
+	    		image = "#common/reg-input.png",
+	    		x = bg:getContentSize().width/2 - 60,
 	    		y = yy,
-	    		size = size,
+	    		size = cc.size(622,74),
 	    		listener = function ( event, editbox )
 	    			-- body
 	    		end
-	    	}):addTo(self)
+	    	}):addTo(bg)
 	    	input:setPlaceHolder(lables[i])
-	    	-- input:setPlaceholderFontSize(40)
-	    	input:setPlaceholderFontColor(cc.c3b(96,96,96))
+	    	input:setPlaceholderFontColor(cc.c3b(200,200,200))
 	    	input:setMaxLength(6)
 
-        	cc.ui.UIPushButton.new("#common/green-btn.png",{scale9 = true})
-        		:setButtonSize(226, 77)
-        		:setButtonLabel(cc.ui.UILabel.new({text = "发送验证码", size = 36, font = "Helvetica"}))
-	            :align(display.CENTER,display.cx + 130,yy)
+        	cc.ui.UIPushButton.new("#common/verifycode.png",{scale9 = true})
+        		:setButtonSize(140, 64)
+        		:setButtonLabel(cc.ui.UILabel.new({text = "验证码", size = 36, font = "Helvetica",color = cc.c3b(1,78,122)}))
+	            :align(display.CENTER,bg:getCascadeBoundingBox().width/1.3,yy)
 	            :onButtonPressed(function(event)
 	                    -- sprite:runAction(cc.TintBy:create(0,-128,-128,-128))
 	            end)
@@ -87,13 +66,13 @@ function Register:ctor()
 	                   utils.http(CONFIG.EachGame_URL .. "user/sendverifycode",params,function ( data )
 	                   end,"POST")
 	            end)
-	            :addTo(self)
+	            :addTo(bg)
             self.parts[items[i]] = input
         elseif i == 5 then
         	local sex0,sex1
-        	sex1 =  display.newFilteredSprite("#login/sex1.png", "GRAY", {0.2, 0.3, 0.5, 0.1})
-					:align(display.CENTER, display.cx - 130,yy - 22)
-					:addTo(self)
+        	sex1 =  display.newFilteredSprite("#common/female.png", "GRAY", {0.2, 0.3, 0.5, 0.1})
+					:align(display.CENTER, bg:getContentSize().width/2 - 130,yy)
+					:addTo(bg)
         	sex1:addNodeEventListener(cc.NODE_TOUCH_EVENT,function ( event )
 				 if event.name == "began" then
 		            return true
@@ -105,9 +84,9 @@ function Register:ctor()
 			end)
 			sex1:setTouchEnabled(true)
 
-			sex0 =  display.newSprite("#login/sex0.png",nil,nil,{class=cc.FilteredSpriteWithOne})
-					:align(display.CENTER, display.cx + 130,yy - 22)
-					:addTo(self)
+			sex0 =  display.newSprite("#common/male.png",nil,nil,{class=cc.FilteredSpriteWithOne})
+					:align(display.CENTER, bg:getContentSize().width/2 + 130,yy)
+					:addTo(bg)
         	sex0:addNodeEventListener(cc.NODE_TOUCH_EVENT,function ( event )
 				 if event.name == "began" then
 		            return true
@@ -121,17 +100,17 @@ function Register:ctor()
         else
 
 	    	input = cc.ui.UIInput.new({
-	    		image = "#login/input.png",
-	    		x = display.cx,
+	    		image = "#common/reg-input.png",
+	    		x = bg:getContentSize().width/2 - 60,
 	    		y = yy,
-	    		size = size,
+	    		size = cc.size(622,74),
 	    		listener = function ( event, editbox )
 	    			-- body
 	    		end
-	    	}):addTo(self)
+	    	}):addTo(bg)
 	    	input:setPlaceHolder("请输入"..lables[i])
 	    	-- input:setPlaceholderFontSize(40)
-	    	input:setPlaceholderFontColor(cc.c3b(96,96,96))
+	    	input:setPlaceholderFontColor(cc.c3b(200,200,200))
 	    	input:setMaxLength(20)
 	    	self.parts[items[i]] = input
 	    	if i == 3 then
@@ -140,13 +119,10 @@ function Register:ctor()
 	    		input:setMaxLength(11)
 	    	end
 	    end
-    	
     	yy = yy - 100
     end
-    cc.ui.UIPushButton.new("#common/green-btn.png",{scale9 = true})
-        		:setButtonSize(311, 139)
-        		:setButtonLabel(cc.ui.UILabel.new({text = "注册", size = 60, font = "Helvetica-Bold"}))
-	            :align(display.CENTER,display.cx,yy - 70)
+    cc.ui.UIPushButton.new("#common/reg-btn.png",{scale9 = true})
+	            :align(display.CENTER,bg:getContentSize().width/2,yy - 40)
 	            :onButtonPressed(function(event)
 	                    -- sprite:runAction(cc.TintBy:create(0,-128,-128,-128))
 	            end)
@@ -197,7 +173,7 @@ function Register:ctor()
 	                    end,"POST")
 	            end)
 	                    	
-	            :addTo(self)
+	            :addTo(bg)
 end
 
 

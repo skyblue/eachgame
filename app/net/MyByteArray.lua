@@ -10,9 +10,9 @@ function ByteArray:Begin(cmd)
 end
 
 function ByteArray:End()
-	if cmd ~= 0 and DEBUG > 0 then
-		dump(self:getPos()-5)
-	end
+	-- if cmd ~= 0 and DEBUG > 0 then
+	-- 	dump(self:getPos()-5)
+	-- end
 	self:writeInInt(1,self:getPos()-5)
 end
 

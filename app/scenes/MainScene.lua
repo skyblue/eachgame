@@ -15,13 +15,6 @@ function MainScene:ctor()
         Event:init()
         Room = require("app.scenes.Room")
         display.replaceScene(Room.new(),"Fade",0.2)
-    --     local url = CONFIG.API_URL .. "GameMember.load?"
-    --     local request = network.createHTTPRequest(function(event)
-    --         dump(event)
-    --         if event.name == "completed" then
-    --             dump(event.getResponseString())
-    --         end
-    -- end, url, "GET")
 
 end
 	

@@ -102,12 +102,12 @@ function Login:ctor()
 	            			return
 	            		end
 	                    SendCMD:login(acc,pwd,2)
-
-	              --       local params = {user_name = acc,accout_type = 2,user_pwd = pwd,source = CONFIG.appName
-	              --       platform ＝ device.platform == "ios" and 1 or 2,game_id = CONFIG.gameId}
+	              --       pwd = crypto.md5(pwd)
+	              --       local params = {user_name = acc,accout_type = 2,user_pwd = pwd,source = CONFIG.appName,
+	              --       platform = device.platform == "ios" and 1 or 2,game_id = CONFIG.gameId}
 	            		-- params.sign = utils.genSig(params)
 	              --       utils.http(CONFIG.EachGame_URL .. "user/login",params,function ( data )
-	                    	
+	              --       	dump(data)
 	              --       end)
 	            end)
 	            :addTo(self) 
@@ -190,16 +190,15 @@ function Login:ctor()
 	                    -- sprite:runAction(cc.TintBy:create(0,255,255,255))
 	            end)
 	            :onButtonClicked(function (event)
-	                    if not _.MyStore then
-		                    _.MyStore = MyStore.new()
-		                    self:addChild(_.MyStore)
-		                end
-	                    _.MyStore:show()
-	                    -- self:addChild(MyStore.new())
+	                    utils.playSound("click")
+				        if _.UserInfo == nil or tolua.isnull(_.UserInfo) then 
+				            _.UserInfo = UserInfo.new():addTo(self)
+				        end
+				        _.UserInfo:show(USER)
 	            end)
 	            :addTo(self) 
     end
-    -- Loading.new():addTo(self)
+    
 end
 
 return Login

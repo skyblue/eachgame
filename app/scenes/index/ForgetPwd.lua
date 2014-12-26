@@ -2,22 +2,18 @@ local ForgetPwd = class("ForgetPwd",display.newNode)
 	
 function ForgetPwd:ctor()
     self:setContentSize(display.width, display.height)
+    self.data = {}
+    self.parts = {}
+    local bg = display.newSprite("#common/userinfo-bg.png",display.cx,display.cy)
+        :addTo(self)
+    bg:setScaleY(1.4)
+    bg:setScaleX(0.9)
     self:addNodeEventListener(cc.NODE_TOUCH_EVENT,function ( event )
         if not bg:getCascadeBoundingBox():containsPoint(cc.p(event.x,event.y)) then
             self:hide()
         end
     end)
     self:setTouchEnabled(true)
-	self.data = {}
-    self.parts = {}
-	local bg = display.newSprite("#common/userinfo-bg.png",display.cx,display.cy)
-	    :addTo(self)
-	bg:setScaleY(1.4)
-	bg:setScaleX(0.9)
-	-- cc.ui.UIPushButton.new("#login/title-bg.png")
- --        		:setButtonLabel(cc.ui.UILabel.new({text = "找回密码", size = 45, font = "Helvetica-Bold"}))
-	--             :align(display.CENTER,display.cx ,display.height - 140)
-	--             :addTo(self)
     cc.ui.UILabel.new({text = "找回密码", size = 65, font = "Helvetica-Bold"})
         :align(display.CENTER,display.cx ,display.height - 140)
         :addTo(self)

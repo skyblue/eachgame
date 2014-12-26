@@ -8,35 +8,33 @@ listener = {
     click
 }
 ]]
-local Dialog = class("Dialog",display.newLayer)
+local Dialog = class("Dialog",display.newNode)
 
 
 function Dialog:ctor(title, msg, labels, listener, params)
-    -- colors = colors or  {"white","green"}
-    self:setContentSize(display.width, display.height)
     self.listener = listener or function() return end
-
+    local mask = display.newColorLayer(cc.c4b(0,0,0,0))
+            :addTo(self)
+    mask:setContentSize(display.width,display.height)
+    mask:setOpacity(150)
+    mask:setTouchEnabled(false)
+    
     local dialog = display.newNode()
     dialog:setPosition(display.cx,display.cy)
-    local bg = display.newSprite("#common/bg-dialog.png")
-    dialog:addChild(bg)
-    dialog._size = bg:getContentSize()
+    local bg = display.newSprite("img/myinfo-bg.png",0,0)
+        :addTo(dialog)
+    bg:setScale(0.6)
+    dialog._size = bg:getCascadeBoundingBox()
     self.bg = bg
     params = checktable(params)
     self.params = params
     params.textAlign = params.textAlign or cc.ui.TEXT_ALIGN_CENTER
-    -- if params.mask then
-    --     self.mask = utils.mask()
-    --     self:addChild(self.mask)
-    --     self.mask:show()
-    -- end
     if not params.titleSize then
-        params.titleSize = 42
+        params.titleSize = 52
     end
     if not params.msgSize then
-        params.msgSize = 32
+        params.msgSize = 42
     end
-
     if #tostring(title) >0 then
         cc.ui.UILabel.new({
             UILabelType = 2,
@@ -44,35 +42,38 @@ function Dialog:ctor(title, msg, labels, listener, params)
             font = "Helvetica-Bold",
             size = params.titleSize,
             })
-            :align(display.CENTER, 0, dialog._size.height * 0.3)
+            :align(display.CENTER, 0, dialog._size.height * 0.35)
             :addTo(dialog)
     end
-
 
     if #tostring(msg) >0 then
         cc.ui.UILabel.new({
             UILabelType = 2,
             text = msg,
             size = params.msgSize,
-            dimensions = cc.size(dialog._size.width - 60,0),
+            align = display.CENTER,
+            dimensions = cc.size(dialog._size.width - 100,0),
             })
-            :align(display.CENTER, dialog._size.width/4 +30, (#tostring(title) > 0) and 50 or 70)
+            :align(display.CENTER, 0, (#tostring(title) > 0) and 50 or 70)
             :addTo(dialog)
     end
-
 
     local btns = {}
     local x = dialog._size.width / #labels
     local startX  = #labels  == 1 and 0  or -140
-    local startY  = -100
+    local startY  = -dialog._size.height * 0.28
     for i, b in ipairs(labels) do
-        local btn = cc.ui.UIPushButton.new(string.format("#common/btn%s.png",i))
+        local btn = cc.ui.UIPushButton.new("#common/dia-btn.png",{scale9 = true})--cc.ui.UIPushButton.new(string.format("#common/btn%s.png",i))
+            :setButtonSize(200, 84)
             :setButtonLabel(cc.ui.UILabel.new({
                     text = b, 
-                    size = 36, 
+                    size = 46, 
                     align = cc.ui.TEXT_ALIGNMENT_CENTER,
+                    font = "Helvetica-Bold",
+                    color = cc.c3b(1,78,122),
                     })
                     )
+
             :align(display.CENTER,startX + 300 * (i-1), startY)
             :onButtonPressed(function(event)
                     -- sprite:runAction(cc.TintBy:create(0,-128,-128,-128))
@@ -102,17 +103,16 @@ function Dialog:ctor(title, msg, labels, listener, params)
         time   = 0.25,
         scale  = 1,
         easing = "BACKOUT"
-        -- easing = "BOUNCEOUT",
     })
     display.getRunningScene():addChild(self,30)
-
-
     if device.platform == "android" then
         self:addNodeEventListener(cc.KEYPAD_EVENT, function(event)
-            print(event.name)
+            print(event)
+            if event.name == "back" then
+                exitApp()
+            end
         end)
     end
-
     return self
 end
 
@@ -131,23 +131,18 @@ function Dialog:onTouch()
     end
 end
 
-
 function Dialog:hide()
     utils.playSound("click")
-
     self:setTouchEnabled(false)
     transition.scaleTo(self.dialog,{
         time = 0.2,
         scale = 0,
         easing = "BACKIN",
         onComplete = function(  )
-            -- self:removeEventListener()
             return self:removeSelf(true)
         end
     })
 end
-
-
 
 
 return Dialog
