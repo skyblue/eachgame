@@ -1,20 +1,19 @@
 local UserInfo = class("UserInfo",display.newNode)
 
-function UserInfo:ctor()
+function UserInfo:ctor(data)
 	self.parts={}
 	self.parts["props"] ={}
-	local mask = display.newColorLayer(cc.c4b(0,0,0,0))
-        :addTo(self)
+	local mask = cc.LayerColor:create(cc.c4b(0,0,0,0))
+            :addTo(self)
     mask:setContentSize(display.width,display.height)
     mask:setOpacity(150)
-    mask:setTouchEnabled(false)
     self.parts["mask"] = mask
 	self:initMyInfo()
 	self:initPublicInfo()
 	self:setContentSize(display.width,display.height)
 	self:addNodeEventListener(cc.NODE_TOUCH_EVENT,self:onTouch())
+	self:show(data)
 end
-
 
 function UserInfo:onTouch()
     local layer = self
@@ -26,7 +25,6 @@ function UserInfo:onTouch()
         return true
     end
 end
-
 
 function UserInfo:initAnima(bg )
 	self.parts["line"] = display.newSprite("#common/line.png",bg:getContentSize().width/2,140):
@@ -76,7 +74,6 @@ function UserInfo:reset( ... )
 end
 
 function UserInfo:show(user)
-	user.uid= 10
 	local bg = self.parts["bg"]
 	bg:setVisible(true)
 	self.user = user
@@ -84,13 +81,11 @@ function UserInfo:show(user)
 	local xx,yy,height = 500,700,100
 	if user.uid ==  USER.uid then
 	-- if user.uid ~=  USER.uid then
-		self.parts["uname"]:setEnabled(true)
 		self.parts["uname"]:setVisible(true)
 		for i,v in ipairs(self.parts["menu"]) do
 			v:setVisible(true)
 		end
 	else
-		self.parts["uname"]:setEnabled(false)
 		self.parts["uname"]:setVisible(false)
 		self.user.seatid = 1
 		if checkint(self.user.seatid) > 0 then
@@ -118,13 +113,15 @@ function UserInfo:show(user)
     })
 	bg.uid:setString("ID：" .. user.uid)
 	if #user.upic > 0 then
-		utils.loadRemote(bg.head.pic,user.upic)
+		utils.loadRemote(self.parts["head"].pic,user.upic)
 	end
 	
 	local win = user.win_count / user.play_count
 	if user.play_count == 0 then 
 		win = 0
 	end
+	win = checkint(win % 100)
+	win = win /100
 	local textInfo = {user.uname , utils.numAbbr(user.uchips) , "LV："..user.level,user.city,
 		utils.numAbbr(user.win_max) ,  utils.numAbbr(user.win_total) , 
 		user.win_count.."胜"..user.play_count.."局 - %" .. win .."胜率"}
@@ -164,6 +161,7 @@ function UserInfo:show(user)
 end
 
 function UserInfo:hide()
+	SocketEvent:removeEventListenersByEvent(CMD.RSP_CHANGE_PIC .. "back")
 	self:setTouchEnabled(false)
 	self.parts["uname"]:setPlaceHolder("")
 	transition.scaleTo(self.parts["bg"],{
@@ -171,12 +169,12 @@ function UserInfo:hide()
         scale = 0,
         easing = "BACKIN",
         onComplete = function(  )
-        	self.parts["bg"]:setVisible(false)
-        	self.parts["mask"]:setVisible(false)
-            -- return self:removeSelf(true)
-			self.parts["uname"]:setVisible(false)
-			self.parts["uname"]:setEnabled(false)
-			self.parts["uname"]:setText("")
+			SocketEvent:removeEventListenersByEvent(CMD.RSP_CHANGE_UNAME .. "back")
+   --      	self.parts["bg"]:setVisible(false)
+   --      	self.parts["mask"]:setVisible(false)
+			-- self.parts["uname"]:setVisible(false)
+			-- self.parts["uname"]:setText("")
+            return self:removeSelf(true)
         end
     })
 end
@@ -192,7 +190,7 @@ function UserInfo:initMyInfo()
 	self.parts["head"] = head
 
 	head:addNodeEventListener(cc.NODE_TOUCH_EVENT,function ( event )
-		if not self.users or checkint(self.users.uid) ~= USER.uid then return end
+		if not self.user or checkint(self.user.uid) ~= USER.uid then return end
         utils.playSound("click")
         utils.callStaticMethod("ImagePickerBridge","showPicker",{callback = function (data)
         	-- if type(data) == "string" then
@@ -203,22 +201,36 @@ function UserInfo:initMyInfo()
         	network.uploadFile(function(evt)
 					if evt.name == "completed" then
 						local request = evt.request
-						-- printf("REQUEST getResponseStatusCode() = %d", request:getResponseStatusCode())
-						-- printf("REQUEST getResponseHeadersString() =\n%s", request:getResponseHeadersString())
-			 		-- 	printf("REQUEST getResponseDataLength() = %d", request:getResponseDataLength())
-			   --          printf("REQUEST getResponseString() =\n%s", request:getResponseString())
 			            if request:getResponseStatusCode() == 200  then
-			            	SendCMD:changePic(request:getResponseString())
+			            	local upic = request:getResponseString()
+			            	SocketEvent:addEventListener(CMD.RSP_CHANGE_PIC .. "back", function(event)
+			            		USER.upic = upic
+			            		SocketEvent:removeEventListenersByEvent(CMD.RSP_CHANGE_PIC .. "back")
+				            	utils.loadImage(USER.upic,function(succ, ccimage)
+						            if not succ then return end
+					            	local sprite = head.pic
+					            	cc.Director:getInstance():getTextureCache():removeTextureForKey(ccimage)
+				                    sprite:setOpacity(20)
+				                    sprite:setTexture(cc.Director:getInstance():getTextureCache():addImage(ccimage))
+			            			SocketEvent:dispatchEvent({name = CMD.RSP_CHANGE_PIC .. "back1"})
+					                scheduler.performWithDelayGlobal(function()
+					                    transition.fadeTo(sprite,{
+					                        time = 0.2,
+					                        opacity = 255
+					                    })
+						            end, 0.5)
+						        end)
+					        end)
+			            	SendCMD:changePic(upic)
 			            else
 			            	
 			            end
 					end
 
 				end,
-				"http://192.168.1.175/texas/uploadTexasPhotos.php",
+				CONFIG.UPIC_URL,
 				{
 					fileFieldName="buffer",
-					-- filePath=data.filepath,
 					filePath=data,
 					contentType = "multipart/form-data",
 					extra={
@@ -239,9 +251,16 @@ function UserInfo:initMyInfo()
             :addTo(bg)
     local ok = cc.ui.UIPushButton.new("#common/input.png")
             :align(display.CENTER,bg:getContentSize().width - 195,bg:getContentSize().height-104)
+            :onButtonPressed(function(event,sprite)
+                event.target:runAction(cc.TintTo:create(0,128,128,128))
+            end)
+            :onButtonRelease(function(event)
+                event.target:runAction(cc.TintTo:create(0,255,255,255))
+            end)
             :onButtonClicked(function (event)
             	utils.playSound("click")
             	local name = string.trim(self.parts["uname"]:getText())
+            	USER.uname = name
             	if #name > 2 then
             		SendCMD:changeUname(name)
             	end
@@ -252,11 +271,11 @@ function UserInfo:initMyInfo()
     	:addTo(ok)
     local unok = cc.ui.UIPushButton.new("#common/input.png")
             :align(display.CENTER,bg:getContentSize().width-100,bg:getContentSize().height-104)
-            :onButtonPressed(function(event)
-                    -- sprite:runAction(cc.TintBy:create(0,-128,-128,-128))
+            :onButtonPressed(function(event,sprite)
+                event.target:runAction(cc.TintTo:create(0,128,128,128))
             end)
             :onButtonRelease(function(event)
-                    -- sprite:runAction(cc.TintBy:create(0,255,255,255))
+                event.target:runAction(cc.TintTo:create(0,255,255,255))
             end)
             :onButtonClicked(function (event)
             	utils.playSound("click")
@@ -268,16 +287,22 @@ function UserInfo:initMyInfo()
     unok:setVisible(false)
     local uname = cc.ui.UIInput.new({
 	    		image = "#common/input.png",
-	    		-- image = "img/1px.png",
 	    		x = bg:getContentSize().width-480,
-	    		-- y = bg:getContentSize().height-104,
-	    		y = bg:getContentSize().height-90,
+	    		y = bg:getContentSize().height-104,
 	    		size = cc.size(452,90),
 	    		font 	="Helvetica",
 	    		listener = function ( event, editbox )
+		    		
 	    			if #editbox:getText() > 1 then
 		    			ok:setVisible(true)
 		    			unok:setVisible(true)
+		    			if event == "return" then
+		                    ok:setVisible(false)
+			    			unok:setVisible(false)
+			    			local name = string.trim(self.parts["uname"]:getText())
+			    			USER.uname = name
+			    			SendCMD:changeUname(name)
+		                end
 		    		else
 		    			ok:setVisible(false)
 		    			unok:setVisible(false)
@@ -285,11 +310,17 @@ function UserInfo:initMyInfo()
 	    		end
 	    	}):addTo(bg)
     uname:setMaxLength(12)
-    uname:setPlaceholderFont("Helvetica",40)
     uname:setPlaceholderFontColor(cc.c3b(255,255,255))
+    uname:setReturnType(cc.KEYBOARD_RETURNTYPE_DONE)
     self.parts["uname"] = uname
     cc.ui.UIPushButton.new("#common/close_icon.png")
             :align(display.CENTER,bg:getContentSize().width,bg:getContentSize().height)
+            :onButtonPressed(function(event,sprite)
+                event.target:runAction(cc.TintTo:create(0,128,128,128))
+            end)
+            :onButtonRelease(function(event)
+                event.target:runAction(cc.TintTo:create(0,255,255,255))
+            end)
             :onButtonClicked(function (event)
             	utils.playSound("click")
                 self:hide()
@@ -310,26 +341,26 @@ function UserInfo:initMyInfo()
         :addTo(bg)
 	
 	for i=1,4 do
-		self.parts["menu"][i] = cc.ui.UICheckBoxButton.new({on = "#common/btn-select.png", off = "img/1px.png"},{scale9 = true})
+		self.parts["menu"][i] = cc.ui.UICheckBoxButton.new({on = "#common/btn-select.png", off = "#common/1px.png"},{scale9 = true})
             :setButtonLabel(cc.ui.UILabel.new({
                     text = menuText[i], 
                     size = 42, 
                     font = "Helvetica-Bold",
-                    dimensions = cc.size(294, 84)
                     }))
             :setButtonSize(294, 84)
-            :setButtonLabelOffset(-70, -20)
-            :setButtonEnabled(i == 1 and true or false)
+            :setButtonLabelOffset(-70, -6)
+            -- :setButtonEnabled(i == 1 and true or false)
             group:addButton(self.parts["menu"][i])
 
 	end
 	group:getButtonAtIndex(1):setButtonSelected(true)
-
-	SocketEvent:addEventListener(CMD.RSP_CHANGE_PIC .. "back", function(event)
-        utils.loadRemote(head.pic,USER.upic)
-    end)
+	-- SocketEvent:addEventListener(CMD.RSP_CHANGE_PIC .. "back", function(event)
+ --        utils.loadRemote(head.pic,USER.upic)
+ --    end)
 	SocketEvent:addEventListener(CMD.RSP_CHANGE_UNAME .. "back", function(event)
-        self.parts["bg"].text[1]:setString(USER.uname)
+        -- self.parts["bg"].text[1]:setString(USER.uname)
+        ok:setVisible(false)
+		unok:setVisible(false)
     end)
 	
 end
@@ -337,7 +368,7 @@ end
 
 function UserInfo:initPublicInfo()
 	local bg = self.parts["bg"]
-	local msg = {"当前拥有的筹码","当前等级","你的地址","一局游戏里，赢取最多的筹码","输赢累计相加获得的筹码","胜利局数/总局数-输赢率"}
+	local msg = {"当前拥有的筹码","当前等级","你的地址","一局游戏里，赢取最多的筹码","输赢累计相加获得的筹码","胜利局数/总局数/输赢率"}
 	self.parts["info-line"] = display.newSprite("#common/info-line.png",336,bg:getContentSize().height * 0.56)
     	:addTo(bg)
 	self.parts["cards"] ={}
@@ -354,7 +385,7 @@ function UserInfo:initPublicInfo()
 	        self.parts["textIcon"][i-1] = cc.ui.UIPushButton.new("#common/icon_"..(i-1)..".png")
 				:setButtonLabel(self.parts["text"][i])
 	            :onButtonClicked(function (event)
-	                display:getRunningScene():addChild(require("app.common.Tips").new(msg[i-1],event.x+100,event.y+150))
+	                self:addChild(require("app.common.Tips").new(msg[i-1],event.x+100,event.y+150))
 	            end)
 	            :addTo(bg)
 	    else
@@ -365,11 +396,11 @@ function UserInfo:initPublicInfo()
 	end
 	self.parts["pokerIcon"] = display.newSprite("#common/icon_8.png")
 	        	:addTo(bg)
-	cc.ui.UIPushButton.new("img/1px.png",{scale9 = true})
+	cc.ui.UIPushButton.new("#common/1px.png",{scale9 = true})
 				:align(display.LEFT_CENTER,bg:getContentSize().width/2-140,240)
 				:setButtonSize(600, 150)
 	            :onButtonClicked(function (event)
-	                display:getRunningScene():addChild(require("app.common.Tips").new("最好的手牌",event.x+100,event.y+150))
+	                self:addChild(require("app.common.Tips").new("最好的手牌",event.x+100,event.y+150))
 	            end)
 	            :addTo(bg)
 	for i=1,5 do

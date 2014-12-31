@@ -1,5 +1,6 @@
 SendCMD = class("SendCMD")
 
+
 function SendCMD:ctor(socket)
 	self.socket = socket
 end 
@@ -31,7 +32,6 @@ end
 function SendCMD:changeUname(uname)
     local packet = ByteArray.new()
     packet:Begin(CMD.REQ_CHANGE_UNAME)
-    dump(uname)
     packet:writeString(uname)
     packet:End()
     self.socket:send(packet)
@@ -105,12 +105,18 @@ function SendCMD:changePwd(oldpwd,pwd,sign)
     self.socket:send(packet)
 end
 
-function SendCMD:changeToGameServer()
+function SendCMD:changeToLoginServer()
 	self.socket:close()
+	--连上登陆服务器
+    _.ParseSocket.contentType = 1
+    SocketEvent:init(CONFIG.server ,CONFIG.port ,false) 
+end
+
+function SendCMD:changeToGameServer()
+    self.socket:close()
    -- SocketEvent:init(CONFIG.gameServer ,CONFIG.gamePort ,true) 
+    --连上游戏服务器
    SocketEvent:init(CONFIG.gameServer ,CONFIG.gamePort ,false) 
-	--连上游戏服务器
-	-- self.socket:connect(CONFIG.gameServer,CONFIG.gamePort,true)
 end
 
 function SendCMD:loginToGameServer()
@@ -220,6 +226,12 @@ function SendCMD:animation(seatid,pid)
     self.socket:send(packet)
 end 
 
-
+function SendCMD:feed(msg)
+    local packet = ByteArray.new()
+    packet:Begin(CMD.FEED)
+    packet:writeString(msg)
+    packet:End()
+    self.socket:send(packet)
+end 
 
 return SendCMD

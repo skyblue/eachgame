@@ -2,10 +2,10 @@ local Chat = class("Chat",display.newNode)
 	
 function Chat:ctor()
 	-- self:setContentSize(display.width, display.height)
-    display.newColorLayer(cc.c4b(0,0,0,0))
+    cc.LayerColor:create(cc.c4b(0,0,0,0))
         :addTo(self)
         :setOpacity(150)
-    local mask = display.newColorLayer(cc.c4b(0,0,0,0))
+    local mask = cc.LayerColor:create(cc.c4b(0,0,0,0))
         :addTo(self)
     mask:setContentSize(display.width,display.cy)
     mask:setOpacity(190)
@@ -21,7 +21,7 @@ function Chat:ctor()
         :addTo(self)
     self.send = true
 	local input = cc.ui.UIInput.new({
-	    		image = "img/1px.png",
+	    		image = "#common/1px.png",
 	    		x = display.cx-176,
 	    		y = 52,
 	    		size = cc.size(display.width - 390, 90),
@@ -34,7 +34,8 @@ function Chat:ctor()
                         if self.send then
                             self.send =  false
                             --发送聊天消息
-                            SendCMD:chat(string.trim(self.parts["input"]:getText()),0)
+                            local msg = string.trim(self.parts["input"]:getText())
+                            SendCMD:chat(msg,0)
                             self:performWithDelay(function ( ... )
                                self.send = true
                             end,2)
@@ -45,9 +46,9 @@ function Chat:ctor()
 	    	}):addTo(imputImg)
  	input:setReturnType(3)
     input:setMaxLength(40)
-    -- input:setEnabled(false)
+    input:setReturnType(cc.KEYBOARD_RETURNTYPE_SEND)
     self.parts["input"] = input
-    self.parts["input"]:setEnabled(false)
+    self.parts["input"]:setVisible(false)
  	
     local qucikChat = display.newNode():addTo(self)
     self.parts["quickChat"] = qucikChat
@@ -234,13 +235,13 @@ end
 
 function Chat:show(  )
     self:setVisible(true)
-    self.parts["input"]:setEnabled(true)
+    self.parts["input"]:setVisible(true)
     self.parts["quickChat"]:setVisible(true)
     self.parts["expression"]:setVisible(false)
 end
 
 function Chat:hide(  )
-    self.parts["input"]:setEnabled(false)
+    self.parts["input"]:setVisible(false)
     self:setVisible(false)
 end
 

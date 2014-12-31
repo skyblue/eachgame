@@ -1,6 +1,6 @@
 
 -- 0 - disable debug info, 1 - less debug info, 2 - verbose debug info
--- DEBUG = 0
+DEBUG = 0
 DEBUG = 1
 
 -- display FPS stats on screen
@@ -32,25 +32,28 @@ _ = {}
 
 
 CONFIG={
-	sid = 2,---0、自身的几点号，1、游客，2、泡泡吃
+	siginId = 2,---0、自身的帐号，1、游客，2、泡泡号
 	appName = "一起德州",
 	gameId = 10002,
 	itunesId = 949785491,
-	EachGame_URL = "http://api.17yx.tk/" ,
+	-- EachGame_URL = "http://api.17yx.tk/" ,
 	-- EachGame_URL = "http://api.17test.tk/",
-	-- EachGame_URL = "http://api.eachgame.com/",
-	API_URL = "texas.eachgame.com",
-	ORIGIN_API_URL = "http://192.168.1.109/pokerp/api/flashapi.php",
-	BACKUP_API_URL = "http://192.168.1.109/pokerp/api/flashapi.php",
+	EachGame_URL = "http://api.eachgame.com/",
+	-- API_URL = "texas.eachgame.com",
+	UPIC_URL = "http://game-api.eachgame.com:8889/uploadTexasPhotos.php",
+	UPIC_URL = "http://192.168.1.175/texas/uploadTexasPhotos.php",
+	-- ORIGIN_API_URL = "http://192.168.1.109/pokerp/api/flashapi.php",
+	-- BACKUP_API_URL = "http://192.168.1.109/pokerp/api/flashapi.php",
 	useBackupApi = "false",
+	-- server = "192.168.1.11",
 	server = "192.168.1.175",
 	-- server = "texas.eachgame.com",
 	port = "3050",
 	-- server = "192.168.1.34",
 	-- port = "9501",
-	gameServer = "192.168.1.175",
+	-- gameServer = "192.168.1.175",
 	-- gameServer = "texas.eachgame.com",
-	gamePort = "3050",
+	-- gamePort = "3050",
 
 	appversion = "1.0.0",
 	versioncode = 1,
@@ -76,7 +79,10 @@ CONFIG={
 	-- 			{name="二级荷官",min_b = 1000,max_b = 10000,min_buying = "20万",max_buying ="200万"},
 	-- 			{name="三级荷官",min_b = 20000,max_b = 100000,min_buying = "400万",max_buying ="1亿"},
 	-- 		},
+
+
 }
+
 
 USER ={
 	uid = 0,
@@ -90,7 +96,8 @@ USER ={
 	win_total= 0,
 	city = "神秘",
 	level = 20,
-	best_cards = {0,0,0,0,0}
+	best_cards = {0,0,0,0,0},
+	needShow = true,
 }
 
 CMD = {
@@ -128,6 +135,7 @@ CMD = {
 
 	CHAT 			= 3001,
 	CHAT_NTF 		= 3002,
+	FEED 			= 3003,
 }
 
 ROOM_CMD = {

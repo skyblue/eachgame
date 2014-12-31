@@ -134,9 +134,10 @@ function SocketEvent:close()
 end
 
 function SocketEvent:send(packet)
-	-- if DEBUG>0 then
- --        console.log("send >>> ",json.encode(data))
- --    end
+	if DEBUG>0 then
+        printInfo(os.date("%Y-%M-%d-%X"))
+        dump(os.time() + CONFIG.clinet_diftime)
+    end
     if not self.socket or not self.socket.tcp then
         print("connection not exist")
         return

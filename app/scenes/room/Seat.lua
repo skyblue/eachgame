@@ -351,7 +351,9 @@ function Seat:showWin(_type,win)
     end
     self.parts["uname"]:setString(CONFIG.cardtypes[_type])
     self.parts["anim_win"]:playAnimationForever(display.getAnimationCache("anim_win"))
-    
+    if self.model.uid == USER.uid then
+        utils.playSound("win")
+    end
 end
 
 function Seat:hideWin( )

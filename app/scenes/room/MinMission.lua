@@ -74,7 +74,7 @@ function MinMission:init(data)
         cc.ui.UILabel.new({text = "$".. utils.numAbbr(v.chips), color = cc.c3b(254,221,70), size = 40})
             :align(display.CENTER,-bg:getContentSize().width/2 + 120,-30)
             :addTo(content)
-        item.completeBtn = cc.ui.UIPushButton.new("#common/green-btn.png",{scale9 = true})
+        item.completeBtn = cc.ui.UIPushButton.new("#common/verifycode.png",{scale9 = true})
 	            :setButtonSize(120, 70)
 	            :setButtonLabel(cc.ui.UILabel.new({text = "领取", size = 40, font = "Helvetica-Bold"}))
 	            :align(display.CENTER,bg:getContentSize().width/2 -80,0)
@@ -101,7 +101,6 @@ function MinMission:onTouch()
     local layer = self
     return function(event)
         local touched = self.bg:getCascadeBoundingBox():containsPoint(cc.p(event.x,event.y))
-        dump(touched)
         if not touched then
             self:hide()
         end

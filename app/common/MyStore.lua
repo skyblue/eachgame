@@ -5,19 +5,24 @@ local UIScrollView = require("framework.cc.ui.UIScrollView")
 function MyStore:ctor()
     
     self.title = {"商城","兑换"}
-    SocketEvent:addEventListener(CMD.RSP_SHOPLIST .. "back", function(event)
-        SocketEvent:removeEventListenersByEvent(CMD.RSP_SHOPLIST .. "back")
-        self:init()
-    end)
+    if not MyStore.data then
+        SocketEvent:addEventListener(CMD.RSP_SHOPLIST .. "back", function(event)
+            SocketEvent:removeEventListenersByEvent(CMD.RSP_SHOPLIST .. "back")
+            self:init()
+        end)
+    end
     self:addNodeEventListener(cc.NODE_TOUCH_EVENT,self:onTouch())
     self:setContentSize(display.width,display.height)
+    self:show()
 end
 
 function MyStore:onTouch()
     local layer = self
     return function(event)
+        local touched = self.bg:getCascadeBoundingBox():containsPoint(cc.p(event.x,event.y))
+        if not touched or event.y < 150 or event.y > 970 then
             self:hide()
-        return true
+        end
     end
 end
 
@@ -43,8 +48,7 @@ function MyStore:hide()
         scale = 0,
         easing = "BACKIN",
         onComplete = function(  )
-            self.mask:setVisible(false)
-            self:setVisible(false)
+            self:removeSelf()
         end
     })
 end
@@ -66,11 +70,10 @@ function MyStore:init()
     --     {chips = 100000,addChips = 10000,unit = "￥",money = 20,proid ="com.eg.texas.c6"}}   
 
 
-        local mask = display.newColorLayer(cc.c4b(0,0,0,0))
+        local mask = cc.LayerColor:create(cc.c4b(0,0,0,0))
             :addTo(self)
         mask:setContentSize(display.width,display.height)
-        mask:setOpacity(190)
-        mask:setTouchEnabled(false)
+        mask:setOpacity(150)
         self.mask =  mask
         local bg = display.newSprite("img/myinfo-bg.png",display.cx,display.cy)
             :addTo(self)
@@ -78,11 +81,11 @@ function MyStore:init()
 
         cc.ui.UIPushButton.new("#common/close_icon.png")
             :align(display.CENTER,bg:getContentSize().width,bg:getContentSize().height)
-            :onButtonPressed(function(event)
-                    -- sprite:runAction(cc.TintBy:create(0,-128,-128,-128))
+           :onButtonPressed(function(event,sprite)
+                event.target:runAction(cc.TintTo:create(0,128,128,128))
             end)
             :onButtonRelease(function(event)
-                    -- sprite:runAction(cc.TintBy:create(0,255,255,255))
+                event.target:runAction(cc.TintTo:create(0,255,255,255))
             end)
             :onButtonClicked(function (event)
                     self:hide()
@@ -96,7 +99,7 @@ function MyStore:init()
         :addTo(bg)
         local xx,yy = bg:getContentSize().width/2,bg:getContentSize().height/2
         cc.ui.UILabel.new({text = self.title[1] , size = 60})
-                :align(display.CENTER,xx,bg:getContentSize().height-40)
+                :align(display.CENTER,xx,bg:getContentSize().height-60)
                 :addTo(bg)
         local height,item,line,content = 100
         for k,v in pairs(MyStore.data) do
@@ -114,15 +117,16 @@ function MyStore:init()
             cc.ui.UILabel.new({text = "实得：".. utils.numAbbr(v.addChips+v.chips) , size = 40})
                 :align(display.CENTER,100,0)
                 :addTo(content)
-            cc.ui.UIPushButton.new("#common/green-btn.png",{scale9 = true})
+            cc.ui.UIPushButton.new("#common/verifycode.png",{scale9 = true})
                 :setButtonSize(226, 82)
-                :setButtonLabel(cc.ui.UILabel.new({text = v.unit..v.money.." 购买", size = 40, font = "Helvetica-Bold"}))
+                :setButtonLabel(cc.ui.UILabel.new({text = v.unit..v.money.." 购买", size = 40,
+                                font = "Helvetica-Bold",color = cc.c3b(1,78,122)}))
                 :align(display.CENTER,460,0)
-                :onButtonPressed(function(event)
-                        -- sprite:runAction(cc.TintBy:create(0,-128,-128,-128))
+                :onButtonPressed(function(event,sprite)
+                    event.target:runAction(cc.TintTo:create(0,128,128,128))
                 end)
                 :onButtonRelease(function(event)
-                        -- sprite:runAction(cc.TintBy:create(0,255,255,255))
+                    event.target:runAction(cc.TintTo:create(0,255,255,255))
                 end)
                 :onButtonClicked(function (event)
                        self:buyItem(v)
@@ -136,6 +140,10 @@ function MyStore:init()
         self.load = true
         self.list:reload()
     else 
+        SocketEvent:addEventListener(CMD.RSP_SHOPLIST .. "back", function(event)
+            SocketEvent:removeEventListenersByEvent(CMD.RSP_SHOPLIST .. "back")
+            self:init()
+        end)
         SendCMD:getShoplist()
     end
     self:setVisible(false)

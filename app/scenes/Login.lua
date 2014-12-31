@@ -29,7 +29,7 @@ function Login:ctor()
     display.newSprite("#login/input.png",display.width - 320,display.top - 190)
     	:addTo(self)
     local acc = cc.ui.UIInput.new({
-    		image = "img/1px.png",
+    		image = "#common/1px.png",
     		x = display.width - 320,
     		y = display.top - 190,
     		size = cc.size(491,95),
@@ -37,9 +37,8 @@ function Login:ctor()
     			-- body
     		end
     	}):addTo(self)
-	acc:setPlaceHolder("请输入帐号")
-	-- acc:setPlaceholderFontColor(cc.c3b(221,194,148))
-	acc:setMaxLength(20)
+	acc:setPlaceHolder("请输入手机号")
+	acc:setMaxLength(11)
 	-- acc:setInputMode(3)
  --    acc:setReturnType(0)
 
@@ -64,7 +63,7 @@ function Login:ctor()
     display.newSprite("#login/input.png",display.width - 320,display.top - 300)
     	:addTo(self)
 	local pwd = cc.ui.UIInput.new({
-    		image = "img/1px.png",
+    		image = "#common/1px.png",
     		x = display.width - 320,
     		y = display.top - 300,
     		size = cc.size(491,95),
@@ -127,7 +126,7 @@ function Login:ctor()
 	            :addTo(self)
  
 
-   	cc.ui.UIPushButton.new("img/1px.png")
+   	cc.ui.UIPushButton.new("#common/1px.png")
 			:setButtonLabel(cc.ui.UILabel.new({
 		                    text = "忘记密码", 
 		                    size = 45, 
@@ -145,13 +144,13 @@ function Login:ctor()
                     -- sprite:runAction(cc.TintBy:create(0,255,255,255))
             end)
             :onButtonClicked(function (event)
-            	self.parts["acc"]:setEnabled(false)
-            	self.parts["pwd"]:setEnabled(false)
+            	self.parts["acc"]:setVisible(false)
+            	self.parts["pwd"]:setVisible(false)
 	            self:addChild(ForgetPwd.new())
             end)
             :addTo(self) 
 
-	cc.ui.UIPushButton.new("img/1px.png")
+	cc.ui.UIPushButton.new("#common/1px.png")
 			:setButtonLabel(cc.ui.UILabel.new({
 		                    text = "注册", 
 		                    size = 45, 
@@ -169,8 +168,8 @@ function Login:ctor()
                     -- sprite:runAction(cc.TintBy:create(0,255,255,255))
             end)
             :onButtonClicked(function (event)
-            	self.parts["acc"]:setEnabled(false)
-            	self.parts["pwd"]:setEnabled(false)
+            	self.parts["acc"]:setVisible(false)
+            	self.parts["pwd"]:setVisible(false)
 
                 self:addChild(Register.new())
             end)
@@ -191,10 +190,7 @@ function Login:ctor()
 	            end)
 	            :onButtonClicked(function (event)
 	                    utils.playSound("click")
-				        if _.UserInfo == nil or tolua.isnull(_.UserInfo) then 
-				            _.UserInfo = UserInfo.new():addTo(self)
-				        end
-				        _.UserInfo:show(USER)
+				        
 	            end)
 	            :addTo(self) 
     end

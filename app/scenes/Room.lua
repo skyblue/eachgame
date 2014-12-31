@@ -4,10 +4,12 @@ end)
 Pot = require("app.scenes.room.Pot")
 PublicCard  = require("app.scenes.room.PublicCard")
 HandCard    = require("app.scenes.room.HandCard")
-RoomMenu     = require("app.scenes.room.RoomMenu")
+RoomMenu    = require("app.scenes.room.RoomMenu")
 Action      = require("app.scenes.room.Action")
 Seat        = require("app.scenes.room.Seat")
-Event        = require("app.scenes.room.Event")
+Event       = require("app.scenes.room.Event")
+CardsType   =require("app.scenes.room.CardsType")
+
 
 function Room:ctor()
     self.seat_coords5 = {cc.p(display.cx,display.height*0.25),cc.p(175,display.height*0.38),cc.p(278,display.height*0.77),cc.p(1412,display.height*0.77),cc.p(1529,display.height*0.38)}
@@ -22,7 +24,9 @@ function Room:ctor()
     }
     display.addSpriteFrames("img/room.plist","img/room.png")
 	self.parts={}
-    local bg = display.newSprite("img/table-bg.png",display.cx,display.cy)
+    local bg = display.newSprite("img/hall-bg.png",display.cx,display.cy)
+    :addTo(self)
+    display.newSprite("img/table-bg.png",display.cx,display.cy+100)
     :addTo(self)
     if display.height > 960 then
         bg:setScale(display.height/960)
@@ -35,6 +39,11 @@ function Room:ctor()
 	self:initRoomMenu()
     self:initAction()
     utils.stopMusic()
+    self.parts["cards-type"] = CardsType.new():addTo(self,20)
+end
+
+function Room:showCardsType()
+    self.parts["cards-type"]:show()
 end
 
 function Room:initRoomWithData(data)
@@ -186,7 +195,7 @@ function Room:initPublicCard()
 end
 
 function Room:initRoomMenu()
-	local RoomMenu = RoomMenu.new()
+	local RoomMenu = RoomMenu.new(self)
 	self:addChild(RoomMenu,13)
 	self.parts["roomMenu"] = RoomMenu
 end
@@ -222,11 +231,7 @@ function Room:onSeatTap(seat)
                 SendCMD:getUserInfo(seat.model.uid)
 		        return
 		    else
-                dump("-----------")
-                dump("-----------")
-                dump("-----------")
-                dump("-----------")
-                dump(checkint(USER.seatid))
+                -- dump(checkint(USER.seatid))
                 if checkint(USER.seatid) > 0 then return end
 		        --发送socket
                 SendCMD:userSit(seat.model.id,self.model.min_buying,1)

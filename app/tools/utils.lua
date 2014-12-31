@@ -591,7 +591,7 @@ function utils.makeAvatar(data)
     local pic,def_pic
     def_pic = udata.usex == 0 and "img/f.png" or "img/m.png"
     pic = display.newSprite(def_pic)
-
+    
     local maskPic = "#common/head-mask.png"
     if mask_choose ==  1 then
         maskPic = "#common/head-mask1.png"
@@ -634,20 +634,6 @@ function utils.loadRemote(sprite,url, callback)
         end
         return sprite
     end
-    local _key = crypto.md5(url)
-    if _key == sprite.__key then return end
-    sprite.__key = _key
-    local texture = shareCache:getTextureForKey(_key)
-
-    if texture  and not tolua.isnull(texture)  and tolua.type(texture) == "cc.Texture2D" then
-        if type(callback) == "function" then
-            callback(true, texture, sprite, true)
-        -- else
-        --     sprite:setTexture(texture)
-        --     transition.fadeIn(sprite,{time = .1})
-        end
-        return sprite
-    end
     callback = callback or function(succ,texture,sprite,isCache)
         if not succ then return end
         -- 这两句判断可以去掉,暂时保留
@@ -656,9 +642,23 @@ function utils.loadRemote(sprite,url, callback)
         sprite:setTexture(texture)
         transition.fadeIn(sprite,{time = .2})
     end
+
+    local _key = crypto.md5(url)
+    local texture = shareCache:getTextureForKey(_key)
+    if not texture then
+        texture = shareCache:getTextureForKey(device.writablePath .. _key)
+    end
+    if texture  and not tolua.isnull(texture)  and tolua.type(texture) == "cc.Texture2D" then
+        if type(callback) == "function" then
+            callback(true, texture, sprite, true)
+        end
+        return sprite
+    end
+
     utils.loadImage(url,function(succ, ccimage, isCache)
         if succ then
             local texture
+            dump(ccimage)
             if tolua.type(ccimage) == "cc.Image" then
                 texture = shareCache:addUIImage(ccimage,_key)
                 ccimage = nil
@@ -676,20 +676,8 @@ end
 
 function utils.loadImage(url,cb)
         -- 强制刷新
-        -- local flush = false
-        -- if string.find(url,"#flush") then
-        --     flush = true
-        --     url = string.gsub(url,"#flush")
-        -- end
-        -- if math.round(1,100) > 95 then
-        --     flush = true
-        -- end
         local key = crypto.md5(url)
-        local save_path = device.writablePath.."/" .. key
-        -- if not flush and io.exists(save_path) and io.filesize(save_path) > 100 then
-        if io.exists(save_path) and io.filesize(save_path) > 100 then
-            return cb(true, save_path, true)
-        end
+        local save_path = device.writablePath .. key
         local req = network.createHTTPRequest(function(event)
             local ok = (event.name == "completed")
             local request = event.request
@@ -806,7 +794,7 @@ function device.getDeviceID()
     else
         device.deviceID = utils.getUserSetting("device_deviceID",false)
         if not device.deviceID  then
-            device.deviceID = os.date("%Y-%M-%d-%X")..math.random(1-99999999)
+            device.deviceID = os.date("%Y-%M-%d-%X")..math.random(1,99999999)
         end
         utils.setUserSetting("device_deviceID",device.deviceID)
         return device.deviceID
@@ -814,7 +802,7 @@ function device.getDeviceID()
     return r
 end
 device.deviceID = device.getDeviceID()
-
+    
 function device.vibrate(t)
     if device.platform == "ios" then
         cc.Native:vibrate()

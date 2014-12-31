@@ -12,19 +12,21 @@ function Tips:ctor(msg,x,y)
 	    	size = 40,
 	        dimensions = cc.size(350, 0),
 	        align = display.CENTER,
-	        x = 30,
-	        y = bg:getContentSize().height * 0.6,
+	        x = 34,
+	        y = bg:getContentSize().height * 0.57,
     	})
     	:addTo(bg)
-   	text:setPositionY(text:getPositionY()-45 + text:getContentSize().height)
+   	-- text:setPositionY(text:getPositionY())
     self:show()
 end
 
 function Tips:onTouch()
     local layer = self
     return function(event)
+        -- local touched = self.bg:getCascadeBoundingBox():containsPoint(cc.p(event.x,event.y))
+        -- if not touched then
             self:hide()
-        return true
+        -- end
     end
 end
 

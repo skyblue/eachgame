@@ -1,11 +1,10 @@
 Mission = class("Mission",display.newNode)
 
 function Mission:ctor()
-    local mask = display.newColorLayer(cc.c4b(0,0,0,0))
+    local mask = cc.LayerColor:create(cc.c4b(0,0,0,0))
             :addTo(self)
     mask:setContentSize(display.width,display.height)
     mask:setOpacity(150)
-    mask:setTouchEnabled(false)
     
 	local bg = display.newSprite("img/myinfo-bg.png",display.cx,display.cy)
         :addTo(self)
@@ -17,11 +16,11 @@ function Mission:ctor()
                 :addTo(bg)
     cc.ui.UIPushButton.new("#common/close_icon.png")
         :align(display.CENTER,bg:getContentSize().width,bg:getContentSize().height)
-        :onButtonPressed(function(event)
-                -- sprite:runAction(cc.TintBy:create(0,-128,-128,-128))
+        :onButtonPressed(function(event,sprite)
+            event.target:runAction(cc.TintTo:create(0,128,128,128))
         end)
         :onButtonRelease(function(event)
-                -- sprite:runAction(cc.TintBy:create(0,255,255,255))
+            event.target:runAction(cc.TintTo:create(0,255,255,255))
         end)
         :onButtonClicked(function (event)
                 self:hide()
@@ -34,19 +33,18 @@ function Mission:ctor()
         :onButtonSelectChanged(function(event)
             printf("Option %d selected, Option %d unselected", event.selected, event.last)
         end)
-        :align(display.CENTER, 0,-31)
+        :align(display.CENTER, 0,-28)
         :addTo(bg)
     
     for i=1,#self.title do
-        self.parts["menu"..i] = cc.ui.UICheckBoxButton.new({on = "#common/btn-select.png", off = "img/1px.png"},{scale9 = true})
+        self.parts["menu"..i] = cc.ui.UICheckBoxButton.new({on = "#common/btn-select.png", off = "#common/1px.png"},{scale9 = true})
             :setButtonLabel(cc.ui.UILabel.new({
                     text = self.title[i], 
                     size = 42, 
                     font = "Helvetica-Bold",
-                    dimensions = cc.size(392, 84)
                     }))
             :setButtonSize(392, 84)
-            :setButtonLabelOffset(-90, -20)
+            :setButtonLabelOffset(-90, -6)
             -- :setButtonEnabled(i == 1 and true or false)
             group:addButton(self.parts["menu"..i])
 
@@ -56,9 +54,9 @@ function Mission:ctor()
     SendCMD:getMissionlist()
     SocketEvent:addEventListener(CMD.RSP_MISSIONLIST .. "back", function(event)
     	SocketEvent:removeEventListenersByEvent(CMD.RSP_MISSIONLIST .. "back")
-    	self:init(event.data)
+    	self:initMission(event.data)
     end)
-    self:init()
+    -- self:initMission()
     self:addNodeEventListener(cc.NODE_TOUCH_EVENT,self:onTouch())
     self.parts["bg"]:setScale(0.4)
     transition.scaleTo(self.parts["bg"],{
@@ -73,30 +71,26 @@ function Mission:onTouch()
     local layer = self
     return function(event)
         local touched = self.parts["bg"]:getCascadeBoundingBox():containsPoint(cc.p(event.x,event.y))
-        if not touched then
+        if not touched or event.y < 150 or event.y > 970 then
             self:hide()
         end
         return true
     end
 end
 
-function Mission:init(data)
-    data = {
-            {title = "任务任务任务任务",content = "sdfa",chips = 1000,complete=1,need_complete= 10},
-            {title = "任务任务",content = "苦功afas压根堙要要模压模仿wfasd会想人解体顶起结圾持基建" ,chips = 1000,complete=9,need_complete= 10},
-            {title = "任务任务",content = "苦功羁左边国找泊害枯萎仍共fafas压根堙要要泡泡糖炒炒炒械塔顶栽ewfsad模压模仿wfasd会想人解体顶起结圾持基建" ,chips = 1000,complete=10,need_complete= 10},
-            {title = "任务任务",content = "苦功羁左边国找泊害枯萎仍共faf国找泊害枯萎仍共fafas国找泊害枯萎仍共fafas国找泊害枯萎仍共fafas国找泊害枯萎仍共fafas国找泊害枯萎仍共fafasas压根堙要要泡泡糖 炒炒 炒械塔顶栽 ewfsad 模压模仿wfasd会想人解体顶起结圾持基建" ,chips = 1000,complete=10,need_complete= 100},
-            {title = "任务任务",content = "苦功羁左边国找泊害枯萎仍共fafas压根堙要要泡泡糖炒炒炒械塔顶栽ewfsad模压模仿wfasd会想人解体顶起结圾持基建" ,chips = 1000,complete=10,need_complete= 10},
-            {title = "任务任务",content = "苦功羁左边国找泊害枯萎仍共fafas压根堙要要泡泡糖炒炒炒械塔顶栽ewfsad模压模仿wfasd会想人解体顶起结圾持基建" ,chips = 1000,complete=10,need_complete= 10},
-            {title = "任务1",content = "苦功羁左边国找泊害枯萎仍共fafas压根堙要要泡泡糖炒炒炒械塔顶栽ewfsad模压模仿wfasd会想人解体顶起结圾持基建" ,chips = 1000,complete=10,need_complete= 101},
-            {title = "任务1",content = "苦功羁左边国找泊害枯萎仍共fafas压根堙要要泡泡糖炒炒炒械塔顶栽ewfsad模压模仿wfasd会想人解体顶起结圾持基建" ,chips = 1000,complete=10,need_complete= 10},
-            {title = "任务1",content = "苦功羁左边国找泊害枯萎仍共fafas压根堙要要泡泡糖炒炒炒械塔顶栽ewfsad模压模仿wfasd会想人解体顶起结圾持基建" ,chips = 1000,complete=10,need_complete= 10},
-            {title = "任务1",content = "苦功羁左边国找泊害枯萎仍共fafas压根堙要要泡泡糖压模仿wfasd会想人解体顶起结圾持基建" ,chips = 1000,complete=10,need_complete= 10},
-            {title = "任务任务",content = "苦功羁左边国找泊害枯萎仍共fafas压根堙要要泡泡糖压模仿wfasd会想人解体顶起结圾持基建" ,chips = 1000,complete=10,need_complete= 10},
-            {title = "任务1",content = "苦功羁左边国找泊害枯萎仍共fafas压根堙要要泡泡模仿wfasd会想人解体顶起结圾持基建" ,chips = 1000,complete=10,need_complete= 10},
-            {title = "任务1",content = "苦功羁左边国找泊害枯萎仍共fafas压根堙要要泡泡模仿wfasd会想人解体顶起结圾持基建" ,chips = 1000,complete=10,need_complete= 10},
-            {title = "任务1",content = "苦功羁左边国找泊害枯萎仍共fafas压根堙要要泡泡模仿wfasd会想人解体顶起结圾持基建" ,chips = 1000,complete=10,need_complete= 10},
-            }
+function Mission:initAction(data)
+    
+end
+
+function Mission:initMission(data)
+    -- data = {}
+    -- data = {
+    --         {title = "任务任务",content = "sdfa",chips = 1000,complete=1,need_complete= 10},
+    --         title = "任务任务",content = "苦功羁左边国找泊害枯萎仍共fafas压根堙要要泡泡糖压模仿wfasd会想人解体顶起结圾持基建" ,chips = 1000,complete=10,need_complete= 10},
+    --         {title = "任务1",content = "苦功羁左边国找泊害枯萎仍共fafas压根堙要要泡泡模仿wfasd会想人解体顶起结圾持基建" ,chips = 1000,complete=10,need_complete= 10},
+    --         {title = "任务1",content = "苦功羁左边国找泊害枯萎仍共fafas压根堙要要泡泡模仿wfasd会想人解体顶起结圾持基建" ,chips = 1000,complete=10,need_complete= 10},
+    --         {title = "任务1",content = "苦功羁左边国找泊害枯萎仍共fafas压根堙要要泡泡模仿wfasd会想人解体顶起结圾持基建" ,chips = 1000,complete=10,need_complete= 10},
+    --         }
     local bg = self.parts["bg"]
 	self.list = cc.ui.UIListView.new {
             viewRect = cc.rect(0,86, bg:getContentSize().width, bg:getContentSize().height-200),
@@ -137,16 +131,16 @@ function Mission:init(data)
 	            :pos(460,0)
 	            :addTo(content)
 		else
-	        item.completeBtn = cc.ui.UIPushButton.new("#common/green-btn.png",{scale9 = true})
+	        item.completeBtn = cc.ui.UIPushButton.new("#common/verifycode.png",{scale9 = true})
 	            :setButtonSize(140, 74)
-	            :setButtonLabel(cc.ui.UILabel.new({text = "领取", size = 40, font = "Helvetica-Bold"}))
+	            :setButtonLabel(cc.ui.UILabel.new({text = "领取", size = 40, font = "Helvetica-Bold",color = cc.c3b(1,78,122)}))
 	            :align(display.CENTER,500,0)
-	            :onButtonPressed(function(event)
-	                    -- sprite:runAction(cc.TintBy:create(0,-128,-128,-128))
-	            end)
-	            :onButtonRelease(function(event)
-	                    -- sprite:runAction(cc.TintBy:create(0,255,255,255))
-	            end)
+	            :onButtonPressed(function(event,sprite)
+                    event.target:runAction(cc.TintTo:create(0,128,128,128))
+                end)
+                :onButtonRelease(function(event)
+                    event.target:runAction(cc.TintTo:create(0,255,255,255))
+                end)
 	            :onButtonClicked(function (event)
                    SendCMD:completeMission(v.id)
 	            end)

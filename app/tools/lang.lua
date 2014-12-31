@@ -27,6 +27,7 @@ Lang = {
 	
 	RSP_BUY_0		 = "购买成功！",
 	RSP_BUY_1		 = "购买失败！",
+	RSP_USER_INFO	 = "用户不存在",
 }
 --密码错误！
 Lang["RSP_LOGIN_4"] = Lang["RSP_LOGIN_2"]

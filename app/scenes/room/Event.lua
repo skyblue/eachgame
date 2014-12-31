@@ -142,6 +142,7 @@ function Event:init(room)
             		seat:showWin(u.type,u.win)
             		-- winner = {}
         		else
+        			utils.playSound("poker")
         			for i,u in ipairs(winner) do
 		                local seat = seats[u.seatid]
 		                scheduler.performWithDelayGlobal(function()
@@ -265,9 +266,11 @@ function Event:init(room)
         	utils.playSound("check")
         elseif data.type > 2 and data.type < 9  then
 	        if data.type == 3 then
-	            utils.playSound("raise")
+	            utils.playSound("call")
 	        elseif data.type == 4 then
-	        	utils.playSound("call")
+	        	utils.playSound("raise")
+	        elseif data.type == 5 then
+	        	utils.playSound("allin")
 	        end
 	        room:chipin(seat)
 	    end
@@ -279,6 +282,7 @@ function Event:init(room)
 		data.gap_sec = data.gap_sec or room.model.gap_sec
 		local seat = seats[data.seatid]
 		if data.uid == USER.uid then
+			utils.playSound("trun")
 			if seat.model.status == 1 then return end --已弃牌则不处理
 			if data.chipin>0 then
 	            seat.model.chipin = data.chipin

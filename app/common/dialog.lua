@@ -13,7 +13,7 @@ local Dialog = class("Dialog",display.newNode)
 
 function Dialog:ctor(title, msg, labels, listener, params)
     self.listener = listener or function() return end
-    local mask = display.newColorLayer(cc.c4b(0,0,0,0))
+    local mask = cc.LayerColor:create(cc.c4b(0,0,0,0))
             :addTo(self)
     mask:setContentSize(display.width,display.height)
     mask:setOpacity(150)
@@ -75,11 +75,11 @@ function Dialog:ctor(title, msg, labels, listener, params)
                     )
 
             :align(display.CENTER,startX + 300 * (i-1), startY)
-            :onButtonPressed(function(event)
-                    -- sprite:runAction(cc.TintBy:create(0,-128,-128,-128))
+            :onButtonPressed(function(event,sprite)
+                event.target:runAction(cc.TintTo:create(0,128,128,128))
             end)
             :onButtonRelease(function(event)
-                    -- sprite:runAction(cc.TintBy:create(0,255,255,255))
+                event.target:runAction(cc.TintTo:create(0,255,255,255))
             end)
             :onButtonClicked(function (event)
                 local e = {buttonIndex = i,target = btn, name="click"}

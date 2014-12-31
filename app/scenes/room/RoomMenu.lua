@@ -1,6 +1,7 @@
 local RoomMenu  =  class("RoomMenu",display.newNode)
 
-function RoomMenu:ctor()
+function RoomMenu:ctor(room)
+    self.room = room
 	self.parts ={}
     self:setContentSize(display.width, display.height)
     
@@ -12,11 +13,11 @@ function RoomMenu:ctor()
     
     cc.ui.UIPushButton.new("#room/menu.png")
             :pos(81,display.top - 81)
-            :onButtonPressed(function(event)
-                    -- sprite:runAction(cc.TintBy:create(0,-128,-128,-128))
+            :onButtonPressed(function(event,sprite)
+                event.target:runAction(cc.TintTo:create(0,128,128,128))
             end)
             :onButtonRelease(function(event)
-                    -- sprite:runAction(cc.TintBy:create(0,255,255,255))
+                event.target:runAction(cc.TintTo:create(0,255,255,255))
             end)
             :onButtonClicked(function (event)
                 utils.playSound("click")
@@ -26,55 +27,55 @@ function RoomMenu:ctor()
             :addTo(self)
     cc.ui.UIPushButton.new("#room/shop.png")
             :pos(display.width - 81,display.top - 81)
-            :onButtonPressed(function(event)
-                    -- sprite:runAction(cc.TintBy:create(0,-128,-128,-128))
+            :onButtonPressed(function(event,sprite)
+                event.target:runAction(cc.TintTo:create(0,128,128,128))
             end)
             :onButtonRelease(function(event)
-                    -- sprite:runAction(cc.TintBy:create(0,255,255,255))
+                event.target:runAction(cc.TintTo:create(0,255,255,255))
             end)
             :onButtonClicked(function (event)
                 utils.playSound("click")
-                    _.MyStore = MyStore.new()
-                    self:addChild(_.MyStore,20)
-                    _.MyStore:show()
+                    display:getRunningScene():addChild(MyStore.new(),22)
             end)
             :addTo(self)
 
-    local menuBg = display.newSprite("#room/menu-bg.png")
-            :pos(196,display.top - 260)
+    local menuBg = display.newSprite("#room/menu-bg.png",224,display.top - 220)
             :addTo(self)
+
     local menuText = {"返回","换桌","站起"}
      menuText = {"返回大厅","重新换桌","立刻站起"}
-    local menuImg = {"return","change-table","stand"}
+    local menuImg,btn = {"return","change-table","stand"}
     for k,v in pairs(menuText) do
-        cc.ui.UIPushButton.new("#room/"..menuImg[k]..".png")
+        btn = cc.ui.UIPushButton.new("#common/1px.png",{scale9 = true})
+            :setButtonSize(menuBg:getCascadeBoundingBox().width, 100)
             :setButtonLabel(cc.ui.UILabel.new({
                     text = menuText[k], 
                     size = 42, 
                     font = "Helvetica",
-                    align = cc.ui.TEXT_ALIGN_RIGHT,
+                    align = display.LEFT_CENTER,
                     color = cc.c3b(216,186,108),
-                    dimensions = cc.size(355, 60)
+                    -- dimensions = cc.size(355, 60)
                     })
                     )
-            :setButtonLabelOffset(44,0)
-            :pos(80, 350 + (k-1) * - 90)
-            :onButtonPressed(function(event)
-                    -- sprite:runAction(cc.TintBy:create(0,-128,-128,-128))
+            :pos(180, 350 + (k-1) * - 90)
+            :onButtonPressed(function(event,sprite)
+                event.target:runAction(cc.TintTo:create(0,128,128,128))
             end)
             :onButtonRelease(function(event)
-                    -- sprite:runAction(cc.TintBy:create(0,255,255,255))
+                event.target:runAction(cc.TintTo:create(0,255,255,255))
             end)
             :onButtonClicked(function (event)
                     self:setTouchEnabled(false)
                     self.parts["menus"]:setVisible(false)
                     utils.playSound("click")
-                    self["fun"..k]()
+                    self["fun"..k](self)
                     -- self.parts["menus"]:setVisible(false)
             end)
             :addTo(menuBg)   
-    menuBg:setVisible(false)
-    self.parts["menus"] = menuBg
+        display.newSprite("#room/"..menuImg[k]..".png",-130,0)
+            :addTo(btn)
+        menuBg:setVisible(false)
+        self.parts["menus"] = menuBg
     end
     local input = display.newSprite("#room/input.png",270,60)
     :addTo(self)
@@ -90,14 +91,12 @@ function RoomMenu:ctor()
     :addTo(input)
     -- input:setVisible(false)
     cc.ui.UIPushButton.new("#room/msg.png")
-                -- :setButtonSize(360, 104)
-                -- :setButtonLabel(cc.ui.UILabel.new({text = "全下", size = 40, font = "Helvetica-Bold"}))
                 :pos( 50 ,60)
-                :onButtonPressed(function(event)
-                    -- sprite:runAction(cc.TintBy:create(0,-128,-128,-128))
+                :onButtonPressed(function(event,sprite)
+                    event.target:runAction(cc.TintTo:create(0,128,128,128))
                 end)
                 :onButtonRelease(function(event)
-                    -- sprite:runAction(cc.TintBy:create(0,255,255,255))
+                    event.target:runAction(cc.TintTo:create(0,255,255,255))
                 end)
                 :onButtonClicked(function(event)
                     if not _.Chat then
@@ -110,27 +109,17 @@ function RoomMenu:ctor()
                 :addTo(input)
                 -- :setVisible(false)
    cc.ui.UIPushButton.new("#room/cardtype.png")
-                -- :setButtonSize(360, 104)
-                -- :setButtonLabel(cc.ui.UILabel.new({text = "全下", size = 40, font = "Helvetica-Bold"}))
-                :pos( 60 ,160)
-                :onButtonPressed(function(event)
-                    -- sprite:runAction(cc.TintBy:create(0,-128,-128,-128))
+                :pos( 60 ,180)
+                :onButtonPressed(function(event,sprite)
+                    event.target:runAction(cc.TintTo:create(0,128,128,128))
                 end)
                 :onButtonRelease(function(event)
-                    -- sprite:runAction(cc.TintBy:create(0,255,255,255))
+                    event.target:runAction(cc.TintTo:create(0,255,255,255))
                 end)
                 :onButtonClicked(function(event)
-                    self:showPokerType()
+                    self.room:showCardsType()
                 end)
                 :addTo(self)
-                :setVisible(false)
-
-    -- cc.ui.UIPushButton.new("#room/cardtype.png")
-    --             :pos( 60 ,160)
-    --             :onButtonClicked(function(event)
-    --                 display:getRunningScene():addChild(require("app.scenes.room.MinMission").new())
-    --             end)
-    --             :addTo(self)
     
 end
 
@@ -165,6 +154,10 @@ local function changeTable( )
         SocketEvent:removeEventListenersByEvent(CMD.RSP_IN_TABLE .. "back")
         _.Loading:setProgress(0.3)
         scheduler.performWithDelayGlobal(function (  )
+            if _.Loading then
+                _.Loading:hide()
+                _.Loading = nil
+            end
             _.Room = Room.new()
             _.Room:initRoomWithData(event.data)
             display.replaceScene(_.Room)
@@ -175,18 +168,14 @@ local function changeTable( )
 end
 
 function RoomMenu:fun2()
-    if not _.UserInfo then
-        _.UserInfo = UserInfo.new(U)
-        display:getRunningScene():addChild(_.UserInfo)
-    end
-    _.UserInfo:show(USER)
-    -- check({title = "", msg = "确认换个牌桌?",btns = {"确定", "继续游戏"}},function ()
-    --     changeTable()
-    -- end)
+    check({title = "", msg = "确认换个牌桌?",btns = {"确定", "继续游戏"}},function ()
+        changeTable()
+    end)
 end
 
 
 function RoomMenu:fun3()
+    if checkint(USER.seatid) <= 0 then  return end
     check({title = "", msg = "确认站起观看?",btns = {"确定", "继续游戏"}},function ()
         SendCMD:userStand(1)
     end)

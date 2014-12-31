@@ -5,6 +5,7 @@ SendCMD = require("app.net.SendCMD").new(SocketEvent)
 
 function ParseSocket:ctor()
 	self.contentType = 1
+	self.neddHeart = true
 	SocketEvent:init(CONFIG.server ,CONFIG.port ,false) 
 
 	local timeout_num,tid = 0
@@ -15,12 +16,13 @@ function ParseSocket:ctor()
         end
         utils.dialog("", msg,{"重试"},function(event)
         	SendCMD:changeToGameServer()
+        	self.neddHeart = true
         	heart()
         end)
 	end
     local function heart(  )
     	return scheduler.scheduleGlobal(function()
-    		if display.getRunningScene().name == "Login" then return end
+    		if not self.neddHeart then return end
 	        if timeout_num >= 5 then
 	        	reCon("连接超时，请重新连接")
 	        else
@@ -29,7 +31,7 @@ function ParseSocket:ctor()
 	        end
 	    end, 4)
     end
-    tid = heart()
+    -- tid = heart()
 
 	SocketEvent:addEventListener("closed", function(event)
 		reCon("网络连接被断开，请重新连接")
@@ -41,21 +43,32 @@ function ParseSocket:ctor()
 
 	SocketEvent:addEventListener("contented", function(event)
 		if self.contentType == 1 then 
-			local siginId = utils.setUserSetting("last_login_siginId",nil)
-			if siginId == nil then --没有就游客登陆 1
-				SendCMD:login("","",1)
-			else  -- 0 自己的帐号登陆
-				-- 弹登陆框 
-				_.Loading:hide()
-            	display.replaceScene(Login.new())
+			if CONFIG.last_login then
+				self.neddHeart = false
+				CONFIG.last_login._type = CONFIG.last_login._type or 2
+				SendCMD:login(CONFIG.last_login.acc,CONFIG.last_login.pwd,CONFIG.last_login._type)
+			else
+				self.neddHeart = true
+				local siginId = utils.getUserSetting("last_login_siginId",nil)
+				if siginId == nil or siginId == 1 then --没有就游客登陆 1
+					SendCMD:login("","",1)
+				else  -- 0 自己的帐号登陆
+					local data = utils.getUserSetting("last_login")
+					if data and data.acc and data.pwd then
+						data._type = data._type or 2
+						SendCMD:login(data.acc,data.pwd,data._type)
+					else
+						SendCMD:login("","",1)
+					end
+				end
 			end
 		else
 			--连游戏服务器
 			if CONFIG.gameServer and CONFIG.gamePort then
 				SendCMD:loginToGameServer()
 			else
-				--弹登陆框
-				display.replaceScene(Login.new())
+				-- --弹登陆框
+				-- display.replaceScene(Login.new())
 			end
 		end
 	end)
@@ -67,6 +80,8 @@ function ParseSocket:ctor()
 			local cmd = packet:getBeginCmd()
 			if DEBUG > 0 and cmd > 0 then
 				dump("cmd -----》》》  "..cmd)
+		        -- printInfo(os.date("%Y-%M-%d-%X"))
+       			-- dump(os.time() + CONFIG.clinet_diftime)
 			end
 			--如果房间还没初始化完成，把房间命令的数据丢掉
 			if table.indexof(ROOM_CMD,cmd) and not _.Room.load then
@@ -181,13 +196,12 @@ function ParseSocket:userEnter(packet)
 	if _.Room and _.Room.model and _.Room.model.lookUser then
 		_.Room.model.lookUser[#_.Room.model.lookUser] = data
 	end
-	-- dump(data)
 end
 
 function ParseSocket:changeSex(packet)
 	local flag = packet:readChar()
 	if flag == 0 then
-		USER.sex = packet:readChar()
+		-- USER.sex = packet:readChar()
 	else
 		utils.dialog("", LANG["RSP_CHANGE_SEX_"..flag],{"确定"})
 	end
@@ -197,23 +211,22 @@ end
 function ParseSocket:changePic(packet)
 	local flag = packet:readChar()
 	if flag == 0 then
-		USER.upic = packet:readString()
+		-- USER.upic = packet:readString()
+		SocketEvent:dispatchEvent({name = CMD.RSP_CHANGE_PIC .. "back"})
 	else
 		utils.dialog("", LANG["RSP_CHANGE_PIC_"..flag],{"确定"})
 	end
-	SocketEvent:dispatchEvent({name = CMD.RSP_CHANGE_PIC .. "back"})
 end
 
 function ParseSocket:changeUname(packet)
-	local flag = packet:readChar()
-	dump(flag)
+	local flag = packet:readChar() dump(flag)
 	if flag == 0 then
-		USER.uname = packet:readString()
-		dump(USER.uname)
+		-- USER.uname = packet:readString()
+		SocketEvent:dispatchEvent({name = CMD.RSP_CHANGE_UNAME .. "back"})
+		SocketEvent:dispatchEvent({name = CMD.RSP_CHANGE_UNAME .. "back1"})
 	else
 		utils.dialog("", LANG["RSP_CHANGE_UNAME_"..flag],{"确定"})
 	end
-	SocketEvent:dispatchEvent({name = CMD.RSP_CHANGE_UNAME .. "back"})
 end
 
 function ParseSocket:scenesList(packet) 
@@ -309,7 +322,6 @@ end
 
 function ParseSocket:river(packet) --最后一轮，河牌
 	local card = self:readCharArrayData(packet)
-	dump(card)
 	SocketEvent:dispatchEvent({name = ROOM_CMD.RSP_RIVER .. "back",data = card})
 end
 
@@ -326,7 +338,6 @@ end
 
 function ParseSocket:handCard(packet)
 	local card = {packet:readChar(),packet:readChar()}
-	dump(card)
 	SocketEvent:dispatchEvent({name =ROOM_CMD.RSP_HAND_CARDS .. "back",data = card})
 end
 
@@ -401,12 +412,15 @@ function ParseSocket:userStandNtf(packet)
 	local seatid = packet:readChar()
 	local tid = packet:readInt()
 	local _type = packet:readChar()
+	if uid == USER.uid then
+		USER.uchips = packet:readInt()
+	end
 	SocketEvent:dispatchEvent({name = ROOM_CMD.NTF_USER_STAND .. "back",data = {uid =uid,seatid =seatid,tid =tid,type=_type}})
 end
 
 function ParseSocket:userStandFailure(packet)
 	local flag = packet:readChar()
-	USER.uchips = packet:readInt()
+	
 	if flag <=2 then return end
 	utils.dialog("", LANG["RSP_USER_STAND_"..flag],{"确定"})
 end
@@ -542,6 +556,10 @@ function ParseSocket:loginSuccess(packet)
 		CONFIG.httpServer = packet:readString()
 		self.contentType = 2
 		SendCMD:changeToGameServer()
+		if CONFIG.last_login then
+			utils.setUserSetting("last_login",CONFIG.last_login)
+		end
+		SocketEvent:dispatchEvent({name = CMD.RSP_LOGIN .. "back"})
 	else
 		--错误提示
 		utils.dialog("", LANG["RSP_LOGIN_"..flag],{"确定"})
@@ -555,13 +573,18 @@ function ParseSocket:userInfo(packet)
 		local data = self:readUserInfo(packet)
 		data.tid = packet:readInt()
 		data.online = packet:readChar() -- 1 online -- 0 offline
-		-- data.seatid = packet:readShort()
-		if _.UserInfo == nil or tolua.isnull(_.UserInfo) then 
-			_.UserInfo = UserInfo.new():addTo(display.getRunningScene(),30)
+		if data.uid == USER.uid then
+			utils.__merge(USER,data)
+		 	if USER.needShow then
+				display.getRunningScene():addChild(UserInfo.new(data),30)
+			else
+				USER.needShow = true
+			end
+		else
+			display.getRunningScene():addChild(UserInfo.new(data),30)
 		end
-		_.UserInfo:show(data)
 	else
-
+		utils.dialog("", LANG["RSP_USER_INFO"],{"确定"})
 	end
 end
 
@@ -610,14 +633,17 @@ function ParseSocket:loginToGameSuccess(packet)
 		local data = self:readUserInfo(packet)
 		utils.__merge(USER,data)
 		CONFIG.serverTime = packet:readInt()
+
 		CONFIG.clinet_diftime = CONFIG.serverTime  - os.time()
 		-------当前游戏局会话信息 
 		flag = packet:readChar()  --是否读取本字段
-		if flag == 1 then 
+		dump(flag)
+		if flag == 1 then
 			USER.tid = packet:readInt()
 			USER.seatid = packet:readChar()
 			USER.chipin = packet:readInt()
 			USER.buying = packet:readInt()
+			dump(USER)
 		end
 	else
 		-- LANG["RSP_LOGIN_"..flag] --错误提示
